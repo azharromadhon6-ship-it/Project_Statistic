@@ -1,0 +1,113 @@
+/* ============================================================
+   pareto.css — Input table, chart wrapper, stat cards
+   ============================================================ */
+
+/* --- Added: Force ALL text in the panel to be white --- */
+#panel-pareto,
+#panel-pareto * {
+  color: #ffffff !important;
+}
+/* ------------------------------------------------------ */
+
+.pareto-table-wrapper {
+  max-height: 340px;
+  overflow-y: auto;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 640px) {
+  .pareto-table-wrapper { max-height: 200px; }
+}
+
+.pareto-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.pareto-input-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+.pareto-input-table td { padding: 0.3rem 0.4rem; }
+.pareto-input-table input { width: 100%; padding: 6px 8px; }
+.pareto-input-table input.num { text-align: right; font-family: var(--font-mono); }
+.pareto-input-table input.invalid { border-color: var(--accent-red) !important; }
+.pareto-input-table .btn-remove-row {
+  background: transparent;
+  border: none;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 0.4rem;
+}
+.pareto-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
+
+/* Chart area */
+.pareto-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 400px;
+  padding: 1rem;
+}
+.pareto-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+.empty-state-pareto {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+.empty-state-pareto p { font-size: var(--text-sm); }
+
+/* Stat cards */
+.pareto-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+.stat-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  padding: 0.85rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.stat-card.vital { border-color: var(--brand-main); }
+
+.stat-label {
+  font-size: var(--text-xs);
+  opacity: 0.92;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+}
+.stat-value {
+  font-size: var(--text-xl);
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+.stat-sub {
+  font-size: var(--text-xs);
+  opacity: 0.75;
+}
+
+/* Summary table */
+.pareto-summary-wrapper { padding: 0 1rem 1rem; overflow-x: auto; }
+#pareto-summary-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+#pareto-summary-table th, #pareto-summary-table td {
+  padding: 0.5rem 0.7rem;
+  border-bottom: 1px solid var(--border-base);
+  text-align: left;
+}
+#pareto-summary-table th { font-size: var(--text-xs); text-transform: uppercase; }
+#pareto-summary-table td.num { text-align: right; font-family: var(--font-mono); }
+#pareto-summary-table tr.vital-row { background: var(--brand-subtle); }
+#pareto-summary-table td.status.vital { color: var(--brand-light) !important; }

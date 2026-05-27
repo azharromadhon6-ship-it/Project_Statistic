@@ -1,0 +1,78 @@
+/* ============================================================
+   scatter.css — Scatter Chart tool styles
+   ============================================================ */
+
+/* --- Added: Force ALL text in the scatter panel to be white --- */
+#panel-scatter,
+#panel-scatter * {
+  color: #ffffff !important;
+}
+/* -------------------------------------------------------------- */
+
+/* Keep Label X / Label Y flush in one row — same fix as histogram.
+   Without min-width:0 a flex <input> refuses to shrink below its
+   intrinsic ~173px width and pushes past the panel edge. */
+#panel-scatter .field-row { gap: 12px; }
+#panel-scatter .field-row > .field-group { flex: 1 1 0; min-width: 0; }
+#panel-scatter .field-row > .field-group > input { width: 100%; min-width: 0; }
+#panel-scatter .input-panel { overflow: visible; }
+
+.sc-table-wrapper {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 640px) {
+  .sc-table-wrapper { max-height: 200px; }
+}
+
+.sc-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.sc-input-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+.sc-input-table td { padding: 0.3rem 0.4rem; }
+.sc-input-table td.idx { font-family: var(--font-mono); width: 32px; }
+.sc-input-table input { width: 100%; padding: 6px 8px; font-size: var(--text-sm); }
+.sc-input-table input.num { text-align: right; font-family: var(--font-mono); }
+.sc-input-table input.invalid { border-color: var(--accent-red) !important; }
+.sc-input-table .btn-remove-row {
+  background: transparent;
+  border: none;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 0.4rem;
+}
+/* Keeps the delete button turning red when you hover over it so it's obvious */
+.sc-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
+
+.sc-chart-area { padding: 1rem; }
+.sc-canvas-wrapper { position: relative; width: 100%; height: 420px; }
+.sc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+.sc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
+.sc-summary-wrapper { padding: 0 1rem 1rem; overflow-x: auto; }
+#sc-summary-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+#sc-summary-table th, #sc-summary-table td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border-base);
+  text-align: left;
+}
+#sc-summary-table th {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+#sc-summary-table td.num { text-align: right; font-family: var(--font-mono); }

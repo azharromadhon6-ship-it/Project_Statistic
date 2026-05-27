@@ -1,0 +1,106 @@
+/* ============================================================
+   controlchart.css — Control Chart tool styles
+   ============================================================ */
+
+/* --- Added: Force ALL text in the panel to be white --- */
+#panel-controlchart,
+#panel-controlchart * {
+  color: #ffffff !important;
+}
+/* ------------------------------------------------------ */
+
+.cc-table-wrapper {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 640px) {
+  .cc-table-wrapper { max-height: 200px; }
+}
+
+.cc-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.cc-input-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+.cc-input-table td { padding: 0.3rem 0.4rem; }
+.cc-input-table td.idx { font-family: var(--font-mono); width: 32px; }
+.cc-input-table input { width: 100%; padding: 6px 8px; text-align: right; font-family: var(--font-mono); }
+.cc-input-table input.invalid { border-color: var(--accent-red) !important; }
+.cc-input-table .btn-remove-row {
+  background: transparent;
+  border: none;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 0.4rem;
+}
+.cc-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
+
+.cc-chart-area { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; }
+/* Chart canvases render greyscale on a near-white background — set the
+   wrapper bg to match so antialiased edges blend cleanly. */
+.cc-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #FAFAFA;
+  border: 1px solid #e5e5e5;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.cc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
+.cc-mr-wrapper { height: 220px; }
+
+.empty-state-chart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex: 1;
+  min-height: 280px;
+  text-align: center;
+  padding: 2rem;
+}
+.empty-state-chart p { font-size: var(--text-sm); }
+
+.cc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
+.cc-status-badge {
+  display: inline-block;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cc-status-badge.stable   { background: var(--accent-green); color: #fff !important; }
+.cc-status-badge.unstable { background: var(--accent-red);   color: #fff !important; }
+
+.cc-summary-wrapper { padding: 0 1rem 1rem; overflow-x: auto; }
+#cc-summary-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+#cc-summary-table th, #cc-summary-table td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border-base);
+  text-align: left;
+}
+#cc-summary-table th {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+#cc-summary-table td.num { text-align: right; font-family: var(--font-mono); }
+#cc-summary-table tr.ooc-row { background: rgba(239, 68, 68, 0.12); }
+#cc-summary-table td.status-ooc { color: var(--accent-red) !important; font-weight: 600; }

@@ -1,0 +1,122 @@
+/* ============================================================
+   fishbone.css — Fishbone (Ishikawa) tool styles
+   ============================================================ */
+
+/* --- FIX: Aggressively target left panel labels and headers to be white --- */
+#panel-fishbone .input-panel *,
+#panel-fishbone label,
+#panel-fishbone h1, #panel-fishbone h2, #panel-fishbone h3, #panel-fishbone h4, #panel-fishbone h5, #panel-fishbone h6,
+#panel-fishbone span,
+#panel-fishbone p,
+#panel-fishbone legend,
+.fb-cat-list label {
+  color: #ffffff !important;
+}
+/* -------------------------------------------------------------------------- */
+
+.fb-cat-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem 0.75rem;
+}
+.fb-cat-list label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  user-select: none;
+}
+.fb-cat-list input[type=checkbox] { width: auto; }
+
+.fb-causes-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-height: 360px;
+  overflow-y: auto;
+  padding-right: 0.25rem;
+}
+
+.fb-cat-block {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.fb-cat-block-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.fb-cat-block-title {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent-amber) !important; /* Keeping this amber so it stands out like your screenshot */
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.fb-cat-block-add {
+  background: transparent;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  font-size: var(--text-xs);
+  color: #ffffff !important;
+}
+.fb-cat-block-add:hover { background: var(--bg-secondary); }
+
+.fb-cause-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.fb-cause-row > input {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: var(--text-sm);
+}
+.fb-cause-row .btn-remove-row,
+.fb-cause-row .btn-add-sub {
+  background: transparent;
+  border: none;
+  font-size: var(--text-base);
+  line-height: 1;
+  padding: 0 0.35rem;
+  cursor: pointer;
+}
+.fb-cause-row .btn-remove-row:hover { color: var(--accent-red) !important; }
+.fb-cause-row .btn-add-sub:hover { color: var(--brand-light) !important; }
+
+.fb-sub-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin-left: 1rem;
+  padding-left: 0.6rem;
+  border-left: 2px solid var(--border-base);
+}
+.fb-sub-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.fb-sub-row > input {
+  flex: 1;
+  padding: 4px 6px;
+  font-size: var(--text-xs);
+}
+
+.fb-workspace { padding: 0; overflow: auto; }
+#fb-canvas {
+  width: 100%;
+  height: auto;
+  min-height: 480px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  display: block;
+}

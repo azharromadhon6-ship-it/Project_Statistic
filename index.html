@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seven Quality Tools — Flowchart & Pareto</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;600;700&family=Fraunces:ital,wght@0,700;1,700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/navbar.css">
+  <link rel="stylesheet" href="css/flowchart.css">
+  <link rel="stylesheet" href="css/pareto.css">
+  <link rel="stylesheet" href="css/controlchart.css">
+  <link rel="stylesheet" href="css/histogram.css">
+  <link rel="stylesheet" href="css/fishbone.css">
+  <link rel="stylesheet" href="css/scatter.css">
+  <link rel="stylesheet" href="css/runchart.css">
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      <span class="navbar-logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
+      </span>
+      <span>Seven Quality Tools</span>
+    </div>
+    <div class="navbar-links">
+      <a href="#tab-flowchart">Flowchart</a>
+      <a href="#tab-pareto">Pareto</a>
+      <a href="#tab-controlchart">Control</a>
+      <a href="#tab-histogram">Histogram</a>
+      <a href="#tab-fishbone">Fishbone</a>
+      <a href="#tab-scatter">Scatter</a>
+      <a href="#tab-runchart">Run</a>
+      <a href="#about">About</a>
+    </div>
+  </nav>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <h1>Seven Quality Tools Builder</h1>
+    <p>Flowchart, Pareto, Control Chart, Histogram, dan Fishbone — semuanya di browser, tanpa instalasi.</p>
+    <button class="cta" onclick="document.querySelector('.tabs').scrollIntoView({behavior:'smooth'})">Mulai Sekarang</button>
+  </header>
+
+  <main class="app-main">
+
+    <!-- Restore banner -->
+    <div id="restore-prompt" class="restore-prompt hidden" role="region" aria-hidden="true">
+      <span>Sesi sebelumnya ditemukan. Lanjutkan?</span>
+      <button id="btn-restore-continue" class="btn-primary">Lanjutkan</button>
+      <button id="btn-restore-discard" class="btn-secondary">Mulai Baru</button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" role="tablist">
+      <button id="tab-flowchart" class="tab-btn active" role="tab" aria-selected="true" aria-controls="panel-flowchart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        Flowchart
+      </button>
+      <button id="tab-pareto" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-pareto">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 16v-4M12 16V8M17 16v-2"/></svg>
+        Pareto
+      </button>
+      <button id="tab-controlchart" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-controlchart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 17l4-6 4 2 4-7 6 8"/><path d="M3 7h18M3 21h18" stroke-dasharray="3,3"/></svg>
+        Control Chart
+      </button>
+      <button id="tab-histogram" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-histogram">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="13" width="4" height="8"/><rect x="9" y="8" width="4" height="13"/><rect x="15" y="4" width="4" height="17"/></svg>
+        Histogram
+      </button>
+      <button id="tab-fishbone" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-fishbone">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12h16"/><rect x="18" y="9" width="4" height="6"/><path d="M6 12l-3-4M10 12l-3-4M14 12l-3-4M6 12l-3 4M10 12l-3 4M14 12l-3 4"/></svg>
+        Fishbone
+      </button>
+      <button id="tab-scatter" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-scatter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 3v18"/><circle cx="7" cy="16" r="1.5"/><circle cx="10" cy="11" r="1.5"/><circle cx="13" cy="14" r="1.5"/><circle cx="16" cy="8" r="1.5"/><circle cx="19" cy="6" r="1.5"/></svg>
+        Scatter
+      </button>
+      <button id="tab-runchart" class="tab-btn" role="tab" aria-selected="false" aria-controls="panel-runchart">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M3 3v18"/><polyline points="5,15 8,11 11,13 14,8 17,12 20,9"/></svg>
+        Run Chart
+      </button>
+    </div>
+
+    <!-- ============ FLOWCHART PANEL ============ -->
+    <section id="panel-flowchart" class="tool-panel" role="tabpanel">
+      <div class="tool-grid">
+        <!-- Left: input -->
+        <div class="input-panel">
+          <span class="section-label">Tambah Node</span>
+          <div class="field-group">
+            <label for="fc-node-label">Label Step</label>
+            <input type="text" id="fc-node-label" maxlength="60" placeholder="contoh: Periksa Kualitas">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="fc-node-type">Tipe</label>
+              <select id="fc-node-type">
+                <option value="process">Process</option>
+                <option value="start">Start</option>
+                <option value="end">End</option>
+                <option value="decision">Decision</option>
+                <option value="io">Input/Output</option>
+                <option value="connector">Connector</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="fc-node-color">Warna</label>
+              <input type="color" id="fc-node-color" value="#242837">
+            </div>
+          </div>
+          <button id="btn-fc-add-node" class="btn-primary btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            Tambah Node
+          </button>
+
+          <span class="section-label">Tambah Koneksi</span>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="fc-edge-from">Dari</label>
+              <select id="fc-edge-from"></select>
+            </div>
+            <div class="field-group">
+              <label for="fc-edge-to">Ke</label>
+              <select id="fc-edge-to"></select>
+            </div>
+          </div>
+          <div class="field-group">
+            <label for="fc-edge-label">Label (opsional)</label>
+            <input type="text" id="fc-edge-label" maxlength="30" placeholder="Yes / No / custom">
+          </div>
+          <button id="btn-fc-add-edge" class="btn-primary btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12h6M13 9l3 3-3 3"/></svg>
+            Tambah Koneksi
+          </button>
+
+          <button id="btn-fc-delete" class="btn-secondary btn-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg>
+            Hapus Terpilih
+          </button>
+        </div>
+
+        <!-- Right: canvas -->
+        <div class="workspace fc-workspace">
+          <div class="fc-toolbar">
+            <button id="btn-fc-fit" title="Fit to Screen (F)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg>
+            </button>
+            <button id="btn-fc-zoom-in" title="Zoom In">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4M11 8v6M8 11h6"/></svg>
+            </button>
+            <button id="btn-fc-zoom-out" title="Zoom Out">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4-4M8 11h6"/></svg>
+            </button>
+            <button id="btn-fc-direction" class="direction-btn" title="Toggle Layout">TD</button>
+            <button id="btn-fc-minimap" title="Toggle Mini-map">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 4l6 2 6-2v14l-6 2-6-2-6 2V6z"/><path d="M9 4v14M15 6v14"/></svg>
+            </button>
+            <button id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-1"/></svg>
+            </button>
+            <button id="btn-redo" title="Redo (Ctrl+Y)" disabled>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M15 14l5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h1"/></svg>
+            </button>
+          </div>
+          <svg id="fc-canvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 280" preserveAspectRatio="xMidYMid meet"></svg>
+          <svg id="fc-minimap" class="hidden" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-fc-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-fc-export-svg" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export SVG
+        </button>
+        <button id="btn-fc-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ PARETO PANEL ============ -->
+    <section id="panel-pareto" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <!-- Left: input -->
+        <div class="input-panel">
+          <span class="section-label">Konfigurasi</span>
+          <div class="field-group">
+            <label for="pareto-title">Judul Chart</label>
+            <input type="text" id="pareto-title" maxlength="100" placeholder="Pareto Chart">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="pareto-threshold">Threshold %</label>
+              <input type="number" id="pareto-threshold" min="1" max="99" value="80">
+            </div>
+            <div class="field-group">
+              <label for="pareto-unit">Unit</label>
+              <input type="text" id="pareto-unit" maxlength="20" placeholder="kasus">
+            </div>
+          </div>
+          <details>
+            <summary>Opsi Lanjutan</summary>
+            <div class="field-group" style="margin-top:0.5rem">
+              <label for="pareto-ylabel">Label Sumbu Y</label>
+              <input type="text" id="pareto-ylabel" maxlength="40" placeholder="= unit label">
+            </div>
+          </details>
+
+          <span class="section-label">Data</span>
+          <div class="pareto-table-wrapper">
+            <table class="pareto-input-table">
+              <thead>
+                <tr><th>Kategori</th><th>Frekuensi</th><th></th></tr>
+              </thead>
+              <tbody id="pareto-rows-container"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button id="btn-pareto-add-row" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Tambah Baris
+            </button>
+            <button id="btn-pareto-render" class="btn-primary">Render / Update Chart</button>
+          </div>
+          <div class="btn-group">
+            <label class="btn-secondary btn-icon" for="btn-pareto-import-csv" style="cursor:pointer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></svg>
+              Import CSV
+            </label>
+            <input type="file" id="btn-pareto-import-csv" accept=".csv,.tsv,.txt" class="hidden">
+            <button id="btn-pareto-paste" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="4" rx="1"/><path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/></svg>
+              Paste
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: chart -->
+        <div class="workspace">
+          <div id="pareto-canvas-wrapper" class="pareto-canvas-wrapper">
+            <canvas id="pareto-canvas"></canvas>
+          </div>
+          <div id="pareto-stats" class="pareto-stats"></div>
+          <div class="pareto-summary-wrapper">
+            <table id="pareto-summary-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-pareto-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-pareto-export-csv" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-pareto-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ CONTROL CHART PANEL ============ -->
+    <section id="panel-controlchart" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <div class="input-panel">
+          <span class="section-label">Konfigurasi</span>
+          <div class="field-group">
+            <label for="cc-title">Judul Chart</label>
+            <input type="text" id="cc-title" maxlength="100" placeholder="Control Chart">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="cc-type">Tipe</label>
+              <select id="cc-type">
+                <option value="imr">I-MR (Individual)</option>
+                <option value="xbar">X̄-R (Subgroup)</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="cc-sigma">Sigma (σ)</label>
+              <input type="number" id="cc-sigma" min="1" max="4" step="0.1" value="3">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="cc-subgroup-size">Subgroup n</label>
+              <input type="number" id="cc-subgroup-size" min="2" max="10" value="2" disabled>
+            </div>
+            <div class="field-group">
+              <label for="cc-unit">Unit</label>
+              <input type="text" id="cc-unit" maxlength="20" placeholder="mm / detik / …">
+            </div>
+          </div>
+
+          <span class="section-label">Data</span>
+          <div class="cc-table-wrapper">
+            <table class="cc-input-table">
+              <thead>
+                <tr><th>#</th><th>Nilai</th><th></th></tr>
+              </thead>
+              <tbody id="cc-rows-container"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button id="btn-cc-add-row" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Tambah Nilai
+            </button>
+            <button id="btn-cc-render" class="btn-primary">Render Chart</button>
+          </div>
+          <div class="btn-group">
+            <label class="btn-secondary btn-icon" for="btn-cc-import-csv" style="cursor:pointer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></svg>
+              Import CSV
+            </label>
+            <input type="file" id="btn-cc-import-csv" accept=".csv,.tsv,.txt" class="hidden">
+            <button id="btn-cc-paste" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="4" rx="1"/><path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/></svg>
+              Paste
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div id="cc-chart-area" class="cc-chart-area hidden">
+            <div class="cc-canvas-wrapper" style="position:relative; width:100%; height:420px;">
+              <canvas id="cc-chart-canvas"></canvas>
+            </div>
+          </div>
+          <div id="empty-state-controlchart" class="empty-state-chart">
+            <svg viewBox="0 0 200 80" width="180" aria-hidden="true">
+              <line x1="10" y1="22" x2="190" y2="22" stroke="var(--accent-red)" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <line x1="10" y1="40" x2="190" y2="40" stroke="var(--accent-green)" stroke-width="1.5"/>
+              <line x1="10" y1="58" x2="190" y2="58" stroke="var(--accent-red)" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <polyline points="10,46 35,30 60,50 85,28 110,52 135,33 160,48 185,38"
+                fill="none" stroke="var(--brand-main)" stroke-width="1.5"/>
+            </svg>
+            <p>Masukkan minimal 8 nilai untuk membuat Control Chart.</p>
+          </div>
+          <div id="cc-stats" class="cc-stats"></div>
+          <div class="cc-summary-wrapper">
+            <table id="cc-summary-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-cc-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-cc-export-csv" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-cc-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ HISTOGRAM PANEL ============ -->
+    <section id="panel-histogram" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <div class="input-panel">
+          <span class="section-label">Konfigurasi</span>
+          <div class="field-group">
+            <label for="hist-title">Judul Chart</label>
+            <input type="text" id="hist-title" maxlength="100" placeholder="Histogram">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="hist-bin-method">Method Bin</label>
+              <select id="hist-bin-method">
+                <option value="sturges">Sturges (auto)</option>
+                <option value="fd">Freedman-Diaconis</option>
+                <option value="manual">Manual</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="hist-bin-count">Jumlah Bin</label>
+              <input type="number" id="hist-bin-count" min="1" max="50" value="10" disabled>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="hist-lsl">LSL (opsional)</label>
+              <input type="text" id="hist-lsl" placeholder="batas bawah">
+            </div>
+            <div class="field-group">
+              <label for="hist-usl">USL (opsional)</label>
+              <input type="text" id="hist-usl" placeholder="batas atas">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="hist-unit">Unit</label>
+              <input type="text" id="hist-unit" maxlength="20" placeholder="mm / kg / …">
+            </div>
+            <div class="field-group" style="justify-content:flex-end">
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                <input type="checkbox" id="hist-normal-curve" style="width:auto">
+                <span>Kurva Normal</span>
+              </label>
+            </div>
+          </div>
+
+          <span class="section-label">Tipe Frekuensi</span>
+          <div id="hist-types-container" class="hist-types-container"></div>
+          <button id="btn-hist-add-type" class="btn-secondary btn-icon" type="button" style="align-self:flex-start">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="16" height="16"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+            Tambah Tipe
+          </button>
+
+          <span class="section-label">Data</span>
+          <div class="hist-table-wrapper">
+            <table class="hist-input-table">
+              <thead>
+                <tr id="hist-thead-row">
+                  <th>#</th>
+                  <th>Nilai</th>
+                  <!-- freq-type columns injected here by histogram.js -->
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="hist-rows-container"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button id="btn-hist-add-row" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Tambah Nilai
+            </button>
+            <button id="btn-hist-render" class="btn-primary">Render Chart</button>
+          </div>
+          <div class="btn-group">
+            <label class="btn-secondary btn-icon" for="btn-hist-import-csv" style="cursor:pointer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></svg>
+              Import CSV
+            </label>
+            <input type="file" id="btn-hist-import-csv" accept=".csv,.tsv,.txt" class="hidden">
+            <button id="btn-hist-paste" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="4" rx="1"/><path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/></svg>
+              Paste
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div id="hist-chart-area" class="hist-chart-area hidden">
+            <div class="hist-canvas-wrapper"><canvas id="hist-canvas"></canvas></div>
+          </div>
+          <div id="empty-state-histogram" class="empty-state-chart">
+            <svg viewBox="0 0 200 80" width="180" aria-hidden="true">
+              <rect x="10" y="55" width="22" height="20" fill="var(--border-base)"/>
+              <rect x="34" y="40" width="22" height="35" fill="var(--border-base)"/>
+              <rect x="58" y="20" width="22" height="55" fill="var(--border-base)"/>
+              <rect x="82" y="30" width="22" height="45" fill="var(--border-base)"/>
+              <rect x="106" y="48" width="22" height="27" fill="var(--border-base)"/>
+              <rect x="130" y="60" width="22" height="15" fill="var(--border-base)"/>
+              <path d="M10 60 Q70 0 150 60" fill="none" stroke="var(--accent-amber)" stroke-width="2" stroke-dasharray="3,3"/>
+            </svg>
+            <p>Masukkan minimal 5 nilai untuk membuat Histogram.</p>
+          </div>
+          <div id="hist-stats" class="hist-stats"></div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-hist-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-hist-export-csv" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-hist-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ FISHBONE PANEL ============ -->
+    <section id="panel-fishbone" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <div class="input-panel">
+          <span class="section-label">Problem Statement (Effect)</span>
+          <div class="field-group">
+            <label for="fb-effect">Tuliskan masalah yang akan dianalisis</label>
+            <textarea id="fb-effect" rows="3" maxlength="120" placeholder="contoh: Produk Cacat Tinggi"></textarea>
+          </div>
+
+          <span class="section-label">Kategori (6M)</span>
+          <div class="fb-cat-list" id="fb-cat-list">
+            <label><input type="checkbox" id="fb-cat-man" checked> Man</label>
+            <label><input type="checkbox" id="fb-cat-machine" checked> Machine</label>
+            <label><input type="checkbox" id="fb-cat-material" checked> Material</label>
+            <label><input type="checkbox" id="fb-cat-method" checked> Method</label>
+            <label><input type="checkbox" id="fb-cat-measurement" checked> Measurement</label>
+            <label><input type="checkbox" id="fb-cat-environment" checked> Environment</label>
+          </div>
+
+          <span class="section-label">Causes per Kategori</span>
+          <div id="fb-causes-container" class="fb-causes-container"></div>
+
+          <button id="btn-fb-render" class="btn-primary">Render Diagram</button>
+        </div>
+
+        <div class="workspace fb-workspace">
+          <svg id="fb-canvas" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 280" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-fb-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-fb-export-svg" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export SVG
+        </button>
+        <button id="btn-fb-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ SCATTER CHART PANEL ============ -->
+    <section id="panel-scatter" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <div class="input-panel">
+          <span class="section-label">Konfigurasi</span>
+          <div class="field-group">
+            <label for="sc-title">Judul Chart</label>
+            <input type="text" id="sc-title" maxlength="100" placeholder="Scatter Diagram">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="sc-xlabel">Label X</label>
+              <input type="text" id="sc-xlabel" maxlength="50" placeholder="X">
+            </div>
+            <div class="field-group">
+              <label for="sc-ylabel">Label Y</label>
+              <input type="text" id="sc-ylabel" maxlength="50" placeholder="Y">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                <input type="checkbox" id="sc-show-regression" style="width:auto" checked>
+                <span>Garis Regresi</span>
+              </label>
+            </div>
+            <div class="field-group">
+              <label style="display:flex;align-items:center;gap:0.5rem;cursor:pointer">
+                <input type="checkbox" id="sc-show-band" style="width:auto">
+                <span>Conf. Band 95%</span>
+              </label>
+            </div>
+          </div>
+
+          <span class="section-label">Data</span>
+          <div class="sc-table-wrapper">
+            <table class="sc-input-table">
+              <thead>
+                <tr><th>#</th><th>Label</th><th>X</th><th>Y</th><th></th></tr>
+              </thead>
+              <tbody id="sc-rows-container"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button id="btn-sc-add-row" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Tambah Titik
+            </button>
+            <button id="btn-sc-render" class="btn-primary">Render Chart</button>
+          </div>
+          <div class="btn-group">
+            <label class="btn-secondary btn-icon" for="btn-sc-import-csv" style="cursor:pointer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></svg>
+              Import CSV
+            </label>
+            <input type="file" id="btn-sc-import-csv" accept=".csv,.tsv,.txt" class="hidden">
+            <button id="btn-sc-paste" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="4" rx="1"/><path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/></svg>
+              Paste
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div id="sc-chart-area" class="sc-chart-area hidden">
+            <div class="sc-canvas-wrapper"><canvas id="sc-canvas"></canvas></div>
+          </div>
+          <div id="empty-state-scatter" class="empty-state-chart">
+            <svg viewBox="0 0 200 80" width="180" aria-hidden="true">
+              <circle cx="20" cy="60" r="3" fill="var(--border-base)"/>
+              <circle cx="50" cy="55" r="3" fill="var(--border-base)"/>
+              <circle cx="75" cy="42" r="3" fill="var(--border-base)"/>
+              <circle cx="100" cy="35" r="3" fill="var(--border-base)"/>
+              <circle cx="125" cy="28" r="3" fill="var(--border-base)"/>
+              <circle cx="150" cy="20" r="3" fill="var(--border-base)"/>
+              <line x1="10" y1="65" x2="175" y2="15" stroke="var(--accent-amber)" stroke-width="1.5" stroke-dasharray="4,3"/>
+            </svg>
+            <p>Masukkan minimal 5 pasang (X, Y) untuk Scatter Diagram.</p>
+          </div>
+          <div id="sc-stats" class="sc-stats"></div>
+          <div class="sc-summary-wrapper">
+            <table id="sc-summary-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-sc-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-sc-export-csv" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-sc-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ RUN CHART PANEL ============ -->
+    <section id="panel-runchart" class="tool-panel hidden" role="tabpanel">
+      <div class="tool-grid">
+        <div class="input-panel">
+          <span class="section-label">Konfigurasi</span>
+          <div class="field-group">
+            <label for="rc-title">Judul Chart</label>
+            <input type="text" id="rc-title" maxlength="100" placeholder="Run Chart">
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label for="rc-xlabel">Label X</label>
+              <input type="text" id="rc-xlabel" maxlength="50" placeholder="Urutan">
+            </div>
+            <div class="field-group">
+              <label for="rc-ylabel">Label Y</label>
+              <input type="text" id="rc-ylabel" maxlength="50" placeholder="Nilai">
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field-group">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
+                <input type="checkbox" id="rc-show-median" style="width:auto" checked>
+                <span>Median</span>
+              </label>
+            </div>
+            <div class="field-group">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
+                <input type="checkbox" id="rc-show-annotations" style="width:auto" checked>
+                <span>Anotasi</span>
+              </label>
+            </div>
+            <div class="field-group">
+              <label style="display:flex;align-items:center;gap:0.4rem;cursor:pointer">
+                <input type="checkbox" id="rc-detect-trend" style="width:auto" checked>
+                <span>Trend</span>
+              </label>
+            </div>
+          </div>
+
+          <span class="section-label">Data</span>
+          <div class="rc-table-wrapper">
+            <table class="rc-input-table">
+              <thead>
+                <tr><th>#</th><th>Label/Waktu</th><th>Nilai</th><th></th></tr>
+              </thead>
+              <tbody id="rc-rows-container"></tbody>
+            </table>
+          </div>
+          <div class="btn-group">
+            <button id="btn-rc-add-row" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
+              Tambah Nilai
+            </button>
+            <button id="btn-rc-render" class="btn-primary">Render Chart</button>
+          </div>
+          <div class="btn-group">
+            <label class="btn-secondary btn-icon" for="btn-rc-import-csv" style="cursor:pointer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M5 20h14"/></svg>
+              Import CSV
+            </label>
+            <input type="file" id="btn-rc-import-csv" accept=".csv,.tsv,.txt" class="hidden">
+            <button id="btn-rc-paste" class="btn-secondary btn-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="4" width="8" height="4" rx="1"/><path d="M8 6H6a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-2"/></svg>
+              Paste
+            </button>
+          </div>
+        </div>
+
+        <div class="workspace">
+          <div id="rc-chart-area" class="rc-chart-area hidden">
+            <div class="rc-canvas-wrapper"><canvas id="rc-canvas"></canvas></div>
+          </div>
+          <div id="empty-state-runchart" class="empty-state-chart">
+            <svg viewBox="0 0 200 80" width="180" aria-hidden="true">
+              <line x1="10" y1="40" x2="190" y2="40" stroke="var(--accent-green)" stroke-width="1.5" stroke-dasharray="3,3"/>
+              <polyline points="10,52 30,28 50,46 70,22 90,55 110,32 130,48 150,18 170,45 190,30"
+                fill="none" stroke="var(--border-base)" stroke-width="1.5"/>
+            </svg>
+            <p>Masukkan minimal 10 nilai untuk membuat Run Chart.</p>
+          </div>
+          <div id="rc-stats" class="rc-stats"></div>
+          <div class="rc-summary-wrapper">
+            <table id="rc-summary-table"></table>
+          </div>
+        </div>
+      </div>
+
+      <div class="export-bar">
+        <button id="btn-rc-export-png" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5L5 20"/></svg>
+          Export PNG
+        </button>
+        <button id="btn-rc-export-csv" class="btn-secondary btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12M8 11l4 4 4-4"/><path d="M5 21h14"/></svg>
+          Export CSV
+        </button>
+        <button id="btn-rc-reset" class="btn-danger btn-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="app-footer" id="about">
+    © 2025 · Seven Quality Tools · CC BY · Dibuat dengan Vanilla JS
+  </footer>
+
+  <!-- Shared confirm modal -->
+  <div id="modal-confirm" class="modal-overlay hidden" aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <h3>Konfirmasi</h3>
+      <p id="modal-confirm-msg"></p>
+      <div class="modal-actions">
+        <button id="modal-confirm-cancel" class="btn-secondary">Batal</button>
+        <button id="modal-confirm-ok" class="btn-danger">Hapus Semua</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast container -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ============ SCRIPTS (CRITICAL ORDER) ============ -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@3.0.1/dist/chartjs-plugin-annotation.min.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script> -->
+  <script src="js/app.js"></script>
+  <script src="js/flowchart-undo.js"></script>
+  <script src="js/flowchart.js"></script>
+  <script src="js/pareto.js"></script>
+  <script src="js/controlchart.js"></script>
+  <script src="js/histogram.js"></script>
+  <script src="js/fishbone.js"></script>
+  <script src="js/scatter.js"></script>
+  <script src="js/runchart.js"></script>
+</body>
+</html>

@@ -1,0 +1,80 @@
+/* ============================================================
+   runchart.css — Run Chart tool styles
+   ============================================================ */
+
+/* --- Added: Force ALL text in the runchart panel to be white --- */
+#panel-runchart,
+#panel-runchart * {
+  color: #ffffff !important;
+}
+/* -------------------------------------------------------------- */
+
+/* Keep Label X / Label Y flush in one row — same fix as histogram.
+   Without min-width:0 a flex <input> refuses to shrink below its
+   intrinsic width and pushes past the panel edge. */
+#panel-runchart .field-row { gap: 12px; }
+#panel-runchart .field-row > .field-group { flex: 1 1 0; min-width: 0; }
+#panel-runchart .field-row > .field-group > input { width: 100%; min-width: 0; }
+#panel-runchart .input-panel { overflow: visible; }
+
+.rc-table-wrapper {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--border-base);
+  border-radius: var(--radius-sm);
+}
+@media (max-width: 640px) {
+  .rc-table-wrapper { max-height: 200px; }
+}
+
+.rc-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+.rc-input-table th {
+  text-align: left;
+  padding: 0.5rem 0.6rem;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+.rc-input-table td { padding: 0.3rem 0.4rem; }
+.rc-input-table td.idx { font-family: var(--font-mono); width: 32px; }
+.rc-input-table input { width: 100%; padding: 6px 8px; font-size: var(--text-sm); }
+.rc-input-table input.num { text-align: right; font-family: var(--font-mono); }
+.rc-input-table input.invalid { border-color: var(--accent-red) !important; }
+.rc-input-table .btn-remove-row {
+  background: transparent;
+  border: none;
+  font-size: var(--text-lg);
+  line-height: 1;
+  padding: 0 0.4rem;
+}
+/* Keeps the delete button turning red when you hover over it so it's obvious */
+.rc-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
+
+.rc-chart-area { padding: 1rem; }
+.rc-canvas-wrapper { position: relative; width: 100%; height: 380px; }
+.rc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
+
+.rc-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+  padding: 0 1rem 1rem;
+}
+
+.rc-summary-wrapper { padding: 0 1rem 1rem; overflow-x: auto; }
+#rc-summary-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+#rc-summary-table th, #rc-summary-table td {
+  padding: 0.45rem 0.7rem;
+  border-bottom: 1px solid var(--border-base);
+  text-align: left;
+}
+#rc-summary-table th {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+}
+#rc-summary-table td.num { text-align: right; font-family: var(--font-mono); }
+#rc-summary-table tr.vital-row { background: rgba(239, 68, 68, 0.08); }
+#rc-summary-table td.status.vital { font-weight: 600; }
