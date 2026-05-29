@@ -325,16 +325,6 @@ details[open] > summary { color: var(--text-primary); }
   border-top: 1px solid var(--border-base);
 }
 
-/* ---------- Footer ---------- */
-.app-footer {
-  text-align: center;
-  color: var(--text-muted);
-  font-size: var(--text-sm);
-  padding: 2rem 1rem;
-  border-top: 1px solid var(--border-base);
-  margin-top: 2rem;
-}
-
 /* ---------- Toast ---------- */
 #toast-container {
   position: fixed;
