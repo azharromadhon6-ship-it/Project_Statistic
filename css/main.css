@@ -144,15 +144,19 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: 1fr;
   gap: 1.25rem;
 }
-/* Tablet (768-1024): fixed 320 px left panel. */
+/* Tablet (768-1024): fixed 320 px left panel, clamped to viewport. */
 @media (min-width: 768px) {
   .tool-grid {
     grid-template-columns: 320px 1fr;
+    gap: 0;
     align-items: stretch;
-    min-height: calc(100vh - 130px);
+    min-height: calc(100vh - 180px);
+    max-height: calc(100vh - 180px);
+    overflow: hidden;
   }
   .input-panel {
     height: 100%;
+    max-height: calc(100vh - 180px);
     overflow-y: auto;
     overflow-x: hidden;
     box-sizing: border-box;
@@ -160,26 +164,28 @@ input:focus, select:focus, textarea:focus {
   }
   .workspace {
     height: 100%;
+    max-height: calc(100vh - 180px);
     overflow-y: auto;
     box-sizing: border-box;
     padding: 20px;
+    gap: 12px;
   }
 }
-/* Desktop (≥1024): wider 380 px left panel so the input table + config
-   controls breathe; chart still claims the remaining width. */
+/* Desktop (≥1024): wider 380 px left panel; tighter viewport clamp so
+   the workspace fits without the page scrolling. */
 @media (min-width: 1024px) {
   .tool-grid {
     grid-template-columns: 380px 1fr;
-    align-items: stretch;
-    min-height: calc(100vh - 130px);
+    min-height: calc(100vh - 200px);
+    max-height: calc(100vh - 200px);
   }
   .input-panel {
     width: 380px;
     min-width: 380px;
     max-width: 380px;
-    padding: 24px 20px;
+    max-height: calc(100vh - 200px);
   }
-  .workspace { padding: 24px; gap: 16px; }
+  .workspace { max-height: calc(100vh - 200px); }
   /* Bigger panel typography */
   .input-panel label { font-size: 13px; }
   .input-panel input,
@@ -406,9 +412,49 @@ details[open] > summary { color: var(--text-primary); }
 .restore-prompt span { flex: 1; min-width: 180px; }
 
 /* ────────────────────────────────────────────────────────────────
-   Mobile fixes — narrow phone viewports (< 480 px).
-   Applies to every tool's .input-panel since the class is shared.
+   Mobile fixes (< 767 px) — let panel heights grow with content;
+   the desktop viewport clamps (min-height / max-height) are dropped
+   so phones don't end up with a tiny chart and a long blank page.
    ──────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  .tool-grid {
+    grid-template-columns: 1fr;
+    min-height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+  .input-panel,
+  .workspace {
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    padding: 16px 14px;
+  }
+  /* Canvas in chart tools: tight bracket on phones so charts stay readable */
+  .workspace canvas {
+    min-height: 280px;
+    max-height: 360px;
+    width: 100% !important;
+  }
+  /* SVG (Flowchart, Fishbone): a bit taller to keep diagram legible */
+  .workspace svg {
+    min-height: 320px;
+    max-height: 420px;
+    width: 100% !important;
+  }
+  /* Stats grid: 2 columns on phones instead of 1 (the auto-fit minmax
+     default would otherwise collapse to a single very-narrow column). */
+  .pareto-stats,
+  .cc-stats,
+  .hist-stats,
+  .sc-stats,
+  .rc-stats {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+/* Very narrow phones (< 480 px) — input field rules. Heights are
+   handled by the 767px rule above. */
 @media (max-width: 480px) {
   .input-panel { padding: 12px; }
 
@@ -432,11 +478,6 @@ details[open] > summary { color: var(--text-primary); }
   .input-panel .btn-secondary,
   .input-panel .btn-danger { width: 100%; }
   .input-panel .btn-group { flex-direction: column; }
-
-  /* Compress canvas heights on phones so the chart still fits above the fold */
-  .workspace { min-height: 320px; }
-  .workspace canvas,
-  .workspace svg { min-height: 320px; }
 }
 
 /* Medium screens: 7-tab strip can scroll horizontally instead of wrapping */
@@ -450,8 +491,31 @@ details[open] > summary { color: var(--text-primary); }
 }
 
 /* ────────────────────────────────────────────────────────────────
-   Inline tool guide — info button in each panel header + modal
+   Tool title bar (top of each input panel) + inline tool guide
    ──────────────────────────────────────────────────────────────── */
+.tool-title-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border-base);
+}
+.tool-title-icon {
+  font-size: 20px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tool-title-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-heading);
+  flex: 1;
+  margin: 0;
+  line-height: 1.2;
+}
+
 .panel-header {
   display: flex;
   align-items: center;

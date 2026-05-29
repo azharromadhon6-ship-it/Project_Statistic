@@ -43,8 +43,7 @@
   <!-- ============ HERO ============ -->
   <header class="hero">
     <h1>Seven Quality Tools Builder</h1>
-    <p>Flowchart, Pareto, Control Chart, Histogram, dan Fishbone — semuanya di browser, tanpa instalasi.</p>
-    <button class="cta" onclick="document.querySelector('.tabs').scrollIntoView({behavior:'smooth'})">Mulai Sekarang</button>
+    <p>Flowchart, Pareto, Control Chart, Histogram, Fishbone, Scatter, dan Run Chart — semuanya di browser, tanpa instalasi.</p>
   </header>
 
   <main class="app-main">
@@ -93,10 +92,12 @@
       <div class="tool-grid">
         <!-- Left: input -->
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Tambah Node</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">⬡</span>
+            <h2 class="tool-title-text">Flowchart</h2>
             <button type="button" class="btn-info-tool" data-tool="flowchart" title="Panduan Flowchart" aria-label="Panduan Flowchart">ℹ</button>
           </div>
+          <span class="section-label">Tambah Node</span>
           <div class="field-group">
             <label for="fc-node-label">Label Step</label>
             <input type="text" id="fc-node-label" maxlength="60" placeholder="contoh: Periksa Kualitas">
@@ -198,10 +199,12 @@
       <div class="tool-grid">
         <!-- Left: input -->
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Konfigurasi</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">📊</span>
+            <h2 class="tool-title-text">Pareto Chart</h2>
             <button type="button" class="btn-info-tool" data-tool="pareto" title="Panduan Pareto" aria-label="Panduan Pareto">ℹ</button>
           </div>
+          <span class="section-label">Konfigurasi</span>
           <div class="field-group">
             <label for="pareto-title">Judul Chart</label>
             <input type="text" id="pareto-title" maxlength="100" placeholder="Pareto Chart">
@@ -285,10 +288,12 @@
     <section id="panel-controlchart" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Konfigurasi</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">📈</span>
+            <h2 class="tool-title-text">Control Chart</h2>
             <button type="button" class="btn-info-tool" data-tool="controlchart" title="Panduan Control Chart" aria-label="Panduan Control Chart">ℹ</button>
           </div>
+          <span class="section-label">Konfigurasi</span>
           <div class="field-group">
             <label for="cc-title">Judul Chart</label>
             <input type="text" id="cc-title" maxlength="100" placeholder="Control Chart">
@@ -389,10 +394,12 @@
     <section id="panel-histogram" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Konfigurasi</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">📉</span>
+            <h2 class="tool-title-text">Histogram</h2>
             <button type="button" class="btn-info-tool" data-tool="histogram" title="Panduan Histogram" aria-label="Panduan Histogram">ℹ</button>
           </div>
+          <span class="section-label">Konfigurasi</span>
           <div class="field-group">
             <label for="hist-title">Judul Chart</label>
             <input type="text" id="hist-title" maxlength="100" placeholder="Histogram">
@@ -515,10 +522,12 @@
     <section id="panel-fishbone" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Problem Statement (Effect)</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">🐟</span>
+            <h2 class="tool-title-text">Fishbone Diagram</h2>
             <button type="button" class="btn-info-tool" data-tool="fishbone" title="Panduan Fishbone" aria-label="Panduan Fishbone">ℹ</button>
           </div>
+          <span class="section-label">Problem Statement (Effect)</span>
           <div class="field-group">
             <label for="fb-effect">Tuliskan masalah yang akan dianalisis</label>
             <textarea id="fb-effect" rows="3" maxlength="120" placeholder="contoh: Produk Cacat Tinggi"></textarea>
@@ -565,10 +574,12 @@
     <section id="panel-scatter" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Konfigurasi</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">🔵</span>
+            <h2 class="tool-title-text">Scatter Diagram</h2>
             <button type="button" class="btn-info-tool" data-tool="scatter" title="Panduan Scatter" aria-label="Panduan Scatter">ℹ</button>
           </div>
+          <span class="section-label">Konfigurasi</span>
           <div class="field-group">
             <label for="sc-title">Judul Chart</label>
             <input type="text" id="sc-title" maxlength="100" placeholder="Scatter Diagram">
@@ -670,10 +681,12 @@
     <section id="panel-runchart" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <div class="panel-header">
-            <span class="section-label">Konfigurasi</span>
+          <div class="tool-title-bar">
+            <span class="tool-title-icon" aria-hidden="true">📏</span>
+            <h2 class="tool-title-text">Run Chart</h2>
             <button type="button" class="btn-info-tool" data-tool="runchart" title="Panduan Run Chart" aria-label="Panduan Run Chart">ℹ</button>
           </div>
+          <span class="section-label">Konfigurasi</span>
           <div class="field-group">
             <label for="rc-title">Judul Chart</label>
             <input type="text" id="rc-title" maxlength="100" placeholder="Run Chart">
