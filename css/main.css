@@ -411,73 +411,193 @@ details[open] > summary { color: var(--text-primary); }
 }
 .restore-prompt span { flex: 1; min-width: 180px; }
 
-/* ────────────────────────────────────────────────────────────────
-   Mobile fixes (< 767 px) — let panel heights grow with content;
-   the desktop viewport clamps (min-height / max-height) are dropped
-   so phones don't end up with a tiny chart and a long blank page.
-   ──────────────────────────────────────────────────────────────── */
+/* ════════════════════════════════════════════════════════════════
+   Mobile (< 767 px) — everything except navbar/hero (those live in
+   navbar.css). Heavy use of !important to override the desktop
+   defaults baked into per-tool stylesheets.
+   ════════════════════════════════════════════════════════════════ */
 @media (max-width: 767px) {
+  /* FIX 3 — workspace stack vertikal: grid → flex column */
   .tool-grid {
-    grid-template-columns: 1fr;
-    min-height: auto;
-    max-height: none;
-    overflow: visible;
+    display: flex !important;
+    flex-direction: column !important;
+    grid-template-columns: unset !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    gap: 0;
   }
-  .input-panel,
+  .input-panel {
+    width: 100% !important;
+    min-width: unset !important;
+    max-width: unset !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border-base);
+    padding: 16px !important;
+  }
   .workspace {
-    height: auto;
-    max-height: none;
-    overflow-y: visible;
-    padding: 16px 14px;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    padding: 16px !important;
   }
-  /* Canvas in chart tools: tight bracket on phones so charts stay readable */
+  /* Canvas / SVG fixed heights — no min/max, charts read at one size */
   .workspace canvas {
-    min-height: 280px;
-    max-height: 360px;
     width: 100% !important;
+    height: 260px !important;
+    min-height: unset !important;
+    max-height: unset !important;
   }
-  /* SVG (Flowchart, Fishbone): a bit taller to keep diagram legible */
   .workspace svg {
-    min-height: 320px;
-    max-height: 420px;
     width: 100% !important;
+    height: 300px !important;
+    min-height: unset !important;
+    max-height: unset !important;
   }
-  /* Stats grid: 2 columns on phones instead of 1 (the auto-fit minmax
-     default would otherwise collapse to a single very-narrow column). */
+  /* Wrapper heights that would otherwise force taller canvases */
+  .pareto-canvas-wrapper,
+  .cc-canvas-wrapper,
+  .hist-canvas-wrapper,
+  .sc-canvas-wrapper,
+  .rc-canvas-wrapper {
+    height: 260px !important;
+  }
+
+  /* FIX 5 — tool-title-bar layout (icon | name | ℹ button) */
+  .tool-title-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 12px !important;
+  }
+  .tool-title-icon { font-size: 18px !important; flex-shrink: 0 !important; }
+  .tool-title-text { font-size: 15px !important; flex: 1 !important; }
+  .btn-info-tool {
+    width: 26px !important;
+    height: 26px !important;
+    font-size: 13px !important;
+    flex-shrink: 0 !important;
+    flex-grow: 0 !important;
+    border-radius: 50% !important;
+  }
+
+  /* FIX 6 — action buttons grid (Export PNG / CSV / Reset) */
+  .action-buttons-group {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 6px !important;
+    margin-top: 12px !important;
+    padding-top: 12px !important;
+  }
+  .action-buttons-group button {
+    font-size: 11px !important;
+    padding: 8px 6px !important;
+  }
+  .action-buttons-group .btn-reset { grid-column: 1 / -1 !important; }
+
+  /* FIX 7 — inputs + tables */
+  .input-panel input,
+  .input-panel select,
+  .input-panel textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+    font-size: 14px !important;
+    padding: 10px !important;
+  }
+  .input-panel input[type="checkbox"],
+  .input-panel input[type="color"] { width: auto !important; }
+  /* All flex two-column rows stack on phones */
+  .input-panel .field-row {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+  /* Data tables get a horizontal scroll affordance if they overflow */
+  .input-panel .pareto-table-wrapper,
+  .input-panel .cc-table-wrapper,
+  .input-panel .hist-table-wrapper,
+  .input-panel .sc-table-wrapper,
+  .input-panel .rc-table-wrapper {
+    width: 100% !important;
+    overflow-x: auto !important;
+  }
+  /* Action buttons stack full width */
+  .input-panel button,
+  .input-panel .btn-primary,
+  .input-panel .btn-secondary,
+  .input-panel .btn-danger { width: 100%; }
+  .input-panel .btn-group { flex-direction: column; }
+
+  /* Stats grid: 2 columns + tighter card */
   .pareto-stats,
   .cc-stats,
   .hist-stats,
   .sc-stats,
   .rc-stats {
     grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
   }
+  .stat-card { padding: 10px 12px !important; }
+  .stat-card .stat-value { font-size: 16px !important; }
+
+  /* FIX 8 — tool-guide modal compacted */
+  .tool-guide-box {
+    padding: 20px 16px !important;
+    max-height: 85vh !important;
+    border-radius: 12px !important;
+  }
+  .tool-guide-box h3 {
+    font-size: 15px !important;
+    padding-right: 28px;
+  }
+  .guide-field-name { font-size: 12px !important; }
+  .guide-field-desc { font-size: 11px !important; }
 }
 
-/* Very narrow phones (< 480 px) — input field rules. Heights are
-   handled by the 767px rule above. */
-@media (max-width: 480px) {
-  .input-panel { padding: 12px; }
-
-  /* Two-column rows collapse to one column on phones */
-  .input-panel .field-row { flex-direction: column; gap: 8px; }
-
-  /* Every form control fills the panel width — no overflow on tight screens */
-  .input-panel input,
-  .input-panel select,
-  .input-panel textarea {
-    width: 100% !important;
-    min-width: 0 !important;
-    box-sizing: border-box;
+/* ════════════════════════════════════════════════════════════════
+   FIX 4 — Landscape phones (< 767 px wide, landscape orientation).
+   Restore side-by-side layout because the screen is now wider
+   than tall — vertical stacking would put the chart below the fold.
+   ════════════════════════════════════════════════════════════════ */
+@media (max-width: 767px) and (orientation: landscape) {
+  .tool-grid {
+    display: flex !important;
+    flex-direction: row !important;
   }
-  .input-panel input[type="checkbox"],
-  .input-panel input[type="color"] { width: auto !important; }
+  .input-panel {
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+    height: calc(100vh - 60px) !important;
+    overflow-y: auto !important;
+    border-right: 1px solid var(--border-base) !important;
+    border-bottom: none !important;
+  }
+  .workspace {
+    flex: 1 !important;
+    height: calc(100vh - 60px) !important;
+    overflow-y: auto !important;
+  }
+  .workspace canvas { height: 200px !important; }
+  .workspace svg { height: 220px !important; }
+  .pareto-canvas-wrapper,
+  .cc-canvas-wrapper,
+  .hist-canvas-wrapper,
+  .sc-canvas-wrapper,
+  .rc-canvas-wrapper { height: 200px !important; }
+}
 
-  /* Action buttons stack and span full width */
-  .input-panel button,
-  .input-panel .btn-primary,
-  .input-panel .btn-secondary,
-  .input-panel .btn-danger { width: 100%; }
-  .input-panel .btn-group { flex-direction: column; }
+/* Very narrow phones (< 480 px) — tighter padding only.
+   Width / stacking rules are covered by the 767 px block above. */
+@media (max-width: 480px) {
+  .input-panel { padding: 12px !important; }
+  .workspace { padding: 12px !important; }
 }
 
 /* Medium screens: 7-tab strip can scroll horizontally instead of wrapping */
