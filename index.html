@@ -37,7 +37,6 @@
       <a href="#tab-fishbone">Fishbone</a>
       <a href="#tab-scatter">Scatter</a>
       <a href="#tab-runchart">Run</a>
-      <a href="#about">About</a>
     </div>
   </nav>
 
@@ -94,7 +93,10 @@
       <div class="tool-grid">
         <!-- Left: input -->
         <div class="input-panel">
-          <span class="section-label">Tambah Node</span>
+          <div class="panel-header">
+            <span class="section-label">Tambah Node</span>
+            <button type="button" class="btn-info-tool" data-tool="flowchart" title="Panduan Flowchart" aria-label="Panduan Flowchart">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="fc-node-label">Label Step</label>
             <input type="text" id="fc-node-label" maxlength="60" placeholder="contoh: Periksa Kualitas">
@@ -196,7 +198,10 @@
       <div class="tool-grid">
         <!-- Left: input -->
         <div class="input-panel">
-          <span class="section-label">Konfigurasi</span>
+          <div class="panel-header">
+            <span class="section-label">Konfigurasi</span>
+            <button type="button" class="btn-info-tool" data-tool="pareto" title="Panduan Pareto" aria-label="Panduan Pareto">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="pareto-title">Judul Chart</label>
             <input type="text" id="pareto-title" maxlength="100" placeholder="Pareto Chart">
@@ -280,7 +285,10 @@
     <section id="panel-controlchart" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <span class="section-label">Konfigurasi</span>
+          <div class="panel-header">
+            <span class="section-label">Konfigurasi</span>
+            <button type="button" class="btn-info-tool" data-tool="controlchart" title="Panduan Control Chart" aria-label="Panduan Control Chart">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="cc-title">Judul Chart</label>
             <input type="text" id="cc-title" maxlength="100" placeholder="Control Chart">
@@ -381,7 +389,10 @@
     <section id="panel-histogram" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <span class="section-label">Konfigurasi</span>
+          <div class="panel-header">
+            <span class="section-label">Konfigurasi</span>
+            <button type="button" class="btn-info-tool" data-tool="histogram" title="Panduan Histogram" aria-label="Panduan Histogram">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="hist-title">Judul Chart</label>
             <input type="text" id="hist-title" maxlength="100" placeholder="Histogram">
@@ -504,7 +515,10 @@
     <section id="panel-fishbone" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <span class="section-label">Problem Statement (Effect)</span>
+          <div class="panel-header">
+            <span class="section-label">Problem Statement (Effect)</span>
+            <button type="button" class="btn-info-tool" data-tool="fishbone" title="Panduan Fishbone" aria-label="Panduan Fishbone">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="fb-effect">Tuliskan masalah yang akan dianalisis</label>
             <textarea id="fb-effect" rows="3" maxlength="120" placeholder="contoh: Produk Cacat Tinggi"></textarea>
@@ -551,7 +565,10 @@
     <section id="panel-scatter" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <span class="section-label">Konfigurasi</span>
+          <div class="panel-header">
+            <span class="section-label">Konfigurasi</span>
+            <button type="button" class="btn-info-tool" data-tool="scatter" title="Panduan Scatter" aria-label="Panduan Scatter">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="sc-title">Judul Chart</label>
             <input type="text" id="sc-title" maxlength="100" placeholder="Scatter Diagram">
@@ -653,7 +670,10 @@
     <section id="panel-runchart" class="tool-panel hidden" role="tabpanel">
       <div class="tool-grid">
         <div class="input-panel">
-          <span class="section-label">Konfigurasi</span>
+          <div class="panel-header">
+            <span class="section-label">Konfigurasi</span>
+            <button type="button" class="btn-info-tool" data-tool="runchart" title="Panduan Run Chart" aria-label="Panduan Run Chart">ℹ</button>
+          </div>
           <div class="field-group">
             <label for="rc-title">Judul Chart</label>
             <input type="text" id="rc-title" maxlength="100" placeholder="Run Chart">
@@ -755,8 +775,16 @@
 
   </main>
 
-  <!-- About & Panduan — populated by js/about.js -->
-  <section id="about" class="about-section" aria-label="Panduan penggunaan tiap tool"></section>
+  <!-- Inline tool guide modal — reused by every tool's ℹ button -->
+  <div id="tool-guide-modal" class="hidden" role="dialog" aria-modal="true" aria-labelledby="tool-guide-title">
+    <div class="tool-guide-box">
+      <button class="btn-close-guide" type="button" aria-label="Tutup panduan">×</button>
+      <h3 id="tool-guide-title"></h3>
+      <p class="guide-desc"></p>
+      <ol></ol>
+      <div class="guide-tips"></div>
+    </div>
+  </div>
 
   <footer class="app-footer" id="footer-credits">
     © 2025 · Seven Quality Tools · CC BY · Dibuat dengan Vanilla JS
@@ -790,6 +818,5 @@
   <script src="js/fishbone.js"></script>
   <script src="js/scatter.js"></script>
   <script src="js/runchart.js"></script>
-  <script src="js/about.js"></script>
 </body>
 </html>

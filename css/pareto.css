@@ -60,11 +60,13 @@
 .pareto-canvas-wrapper {
   position: relative;
   width: 100%;
-  height: 500px;
+  height: 480px;
   padding: 1rem;
 }
+#pareto-canvas { min-height: 480px; }
 @media (max-width: 768px) {
   .pareto-canvas-wrapper { height: 320px; }
+  #pareto-canvas { min-height: 300px; }
 }
 .pareto-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
 

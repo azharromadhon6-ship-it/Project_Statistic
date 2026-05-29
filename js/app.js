@@ -841,17 +841,137 @@ function initNavbarLinks() {
       if (href in NAV_LINK_MAP) {
         e.preventDefault();
         switchTab(NAV_LINK_MAP[href]);
-        // The inner .tabs bar is hidden now (FIX 2) — scroll to the
-        // active tool panel instead so the user sees the workspace.
+        // The inner .tabs bar is hidden — scroll to the active tool
+        // panel instead so the user sees the workspace.
         const activePanel = document.getElementById('panel-' + NAV_LINK_MAP[href])
                           || document.querySelector('.app-main');
         if (activePanel) activePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      } else if (href === '#about') {
-        e.preventDefault();
-        const about = document.getElementById('about');
-        if (about) about.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     });
+  });
+}
+
+/* ============================================================
+   Inline tool-guide modal — info ℹ button in each panel header
+   opens a per-tool quick reference. Single modal element reused.
+   ============================================================ */
+const TOOL_GUIDES = {
+  flowchart: {
+    title: '⬡ Flowchart — Peta Alur Proses',
+    desc: 'Menggambarkan urutan langkah proses secara visual menggunakan simbol standar.',
+    steps: [
+      'Isi Label Step → pilih Tipe (Start / End / Process / Decision)',
+      'Klik Tambah Node',
+      'Pilih Dari & Ke → klik Tambah Koneksi',
+      'Klik Export PNG / SVG untuk menyimpan diagram'
+    ],
+    tips: 'Mulai dengan node Start dan akhiri dengan node End.'
+  },
+  pareto: {
+    title: '📊 Pareto Chart — Prioritas 80/20',
+    desc: 'Menemukan 20% penyebab yang berkontribusi 80% terhadap masalah.',
+    steps: [
+      'Isi Kategori dan Frekuensi kejadian',
+      'Set Threshold % (default 80)',
+      'Klik Render / Update Chart',
+      'Bar merah = Vital Few — fokus perbaikan di sini'
+    ],
+    tips: 'Minimal 3 kategori untuk analisis yang bermakna.'
+  },
+  controlchart: {
+    title: '📈 Control Chart — Kendali Proses (SPC)',
+    desc: 'Memantau stabilitas proses menggunakan batas kendali UCL dan LCL.',
+    steps: [
+      'Pilih Tipe: I-MR (individual) atau X̄-R (subgroup)',
+      'Input minimal 8 nilai pengukuran berurutan',
+      'Klik Render Chart',
+      'Titik MERAH = Out of Control → investigasi penyebabnya'
+    ],
+    tips: 'I-MR untuk 1 pengukuran per waktu. X̄-R untuk rata-rata subgroup.'
+  },
+  histogram: {
+    title: '📉 Histogram — Distribusi & Kapabilitas',
+    desc: 'Melihat sebaran data dan menghitung kapabilitas proses (Cp / Cpk).',
+    steps: [
+      'Input nilai pengukuran (minimal 5)',
+      'Isi LSL dan USL jika ada batas spesifikasi',
+      'Pilih Method Bin (Sturges = otomatis)',
+      'Klik Render Chart — lihat Cp / Cpk di statistik bawah'
+    ],
+    tips: 'Target Cpk ≥ 1.33. Cpk < 1.0 = proses tidak kapabel.'
+  },
+  fishbone: {
+    title: '🐟 Fishbone — Analisis Akar Masalah',
+    desc: 'Mengidentifikasi penyebab potensial dari masalah menggunakan 6M.',
+    steps: [
+      'Isi Problem Statement di kotak Effect',
+      'Pilih kategori 6M yang relevan',
+      'Tambah causes di setiap kategori',
+      'Klik Render Diagram'
+    ],
+    tips: '6M: Man, Machine, Material, Method, Measurement, Environment.'
+  },
+  scatter: {
+    title: '🔵 Scatter Diagram — Korelasi Variabel',
+    desc: 'Melihat hubungan antara dua variabel proses.',
+    steps: [
+      'Isi pasangan nilai X dan Y (minimal 5)',
+      'Aktifkan Garis Regresi untuk melihat tren',
+      'Klik Render Chart'
+    ],
+    tips: 'Naik ke kanan = korelasi positif. Turun ke kanan = negatif.'
+  },
+  runchart: {
+    title: '📏 Run Chart — Tren dari Waktu ke Waktu',
+    desc: 'Melihat tren, siklus, atau pergeseran proses dari median.',
+    steps: [
+      'Input nilai urut berdasarkan waktu (minimal 10)',
+      'Aktifkan Median dan Trend untuk analisis lengkap',
+      'Klik Render Chart'
+    ],
+    tips: 'Lebih sederhana dari Control Chart untuk pemantauan awal proses.'
+  }
+};
+
+function showToolGuide(toolName) {
+  const g = TOOL_GUIDES[toolName];
+  const modal = document.getElementById('tool-guide-modal');
+  if (!g || !modal) return;
+  // textContent for title / desc / tips — guide data is hard-coded, not user input
+  modal.querySelector('h3').textContent = g.title;
+  modal.querySelector('.guide-desc').textContent = g.desc;
+  const ol = modal.querySelector('ol');
+  ol.innerHTML = '';
+  g.steps.forEach(s => {
+    const li = document.createElement('li');
+    li.textContent = s;
+    ol.appendChild(li);
+  });
+  modal.querySelector('.guide-tips').textContent = '💡 ' + g.tips;
+  modal.classList.remove('hidden');
+  modal.querySelector('.btn-close-guide')?.focus();
+}
+window.showToolGuide = showToolGuide;
+
+function closeToolGuide() {
+  document.getElementById('tool-guide-modal')?.classList.add('hidden');
+}
+window.closeToolGuide = closeToolGuide;
+
+function initToolGuide() {
+  document.querySelectorAll('.btn-info-tool').forEach(btn => {
+    btn.addEventListener('click', () => showToolGuide(btn.dataset.tool));
+  });
+  const modal = document.getElementById('tool-guide-modal');
+  if (modal) {
+    modal.addEventListener('click', e => {
+      if (e.target === modal || e.target.classList.contains('btn-close-guide')) {
+        closeToolGuide();
+      }
+    });
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeToolGuide();
   });
 }
 
@@ -887,6 +1007,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (typeof window.initScatter === 'function')      window.initScatter();
   if (typeof window.initRunChart === 'function')     window.initRunChart();
 
+  initToolGuide();
   initGlobalErrorHandlers();
 
   // Sync pareto UI from restored state regardless

@@ -65,18 +65,19 @@
 .cc-canvas-wrapper {
   position: relative;
   width: 100%;
-  height: 480px;
+  height: 460px;
   background: #FAFAFA;
   border: 1px solid #e5e5e5;
   border-radius: var(--radius-sm);
   overflow: hidden;
 }
 .cc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
-.cc-mr-wrapper { height: 220px; }
-#cc-chart-canvas { min-height: 480px; }
+.cc-mr-wrapper { height: 200px; }
+#cc-chart-canvas { min-height: 460px; }
+#cc-mr-canvas { min-height: 200px; }
 @media (max-width: 768px) {
   .cc-canvas-wrapper { height: 320px; }
-  #cc-chart-canvas { min-height: 320px; }
+  #cc-chart-canvas { min-height: 300px; }
 }
 
 .empty-state-chart {
