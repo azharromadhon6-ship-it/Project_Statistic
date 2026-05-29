@@ -140,12 +140,17 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: 1fr;
   gap: 1.25rem;
 }
-@media (min-width: 640px) {
-  .tool-grid { grid-template-columns: 35% 1fr; }
+/* Tablet / small desktop: stack horizontally, tighter left panel. */
+@media (min-width: 768px) {
+  .tool-grid { grid-template-columns: minmax(280px, 320px) 1fr; }
 }
+/* Desktop: harder cap on left panel so chart gets ~70%+. */
 @media (min-width: 1024px) {
-  .tool-grid { grid-template-columns: 30% 1fr; }
+  .tool-grid { grid-template-columns: minmax(280px, 300px) 1fr; }
 }
+.workspace { min-height: 480px; }
+.workspace canvas,
+.workspace svg { width: 100%; max-width: 100%; }
 
 .input-panel {
   background: var(--bg-secondary);
@@ -333,3 +338,166 @@ details[open] > summary { color: var(--text-primary); }
   font-size: var(--text-sm);
 }
 .restore-prompt span { flex: 1; min-width: 180px; }
+
+/* ────────────────────────────────────────────────────────────────
+   Mobile fixes — narrow phone viewports (< 480 px).
+   Applies to every tool's .input-panel since the class is shared.
+   ──────────────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .input-panel { padding: 12px; }
+
+  /* Two-column rows collapse to one column on phones */
+  .input-panel .field-row { flex-direction: column; gap: 8px; }
+
+  /* Every form control fills the panel width — no overflow on tight screens */
+  .input-panel input,
+  .input-panel select,
+  .input-panel textarea {
+    width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box;
+  }
+  .input-panel input[type="checkbox"],
+  .input-panel input[type="color"] { width: auto !important; }
+
+  /* Action buttons stack and span full width */
+  .input-panel button,
+  .input-panel .btn-primary,
+  .input-panel .btn-secondary,
+  .input-panel .btn-danger { width: 100%; }
+  .input-panel .btn-group { flex-direction: column; }
+
+  /* Compress canvas heights on phones so the chart still fits above the fold */
+  .workspace { min-height: 320px; }
+  .workspace canvas,
+  .workspace svg { min-height: 320px; }
+}
+
+/* Medium screens: 7-tab strip can scroll horizontally instead of wrapping */
+@media (max-width: 900px) {
+  .tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-btn { flex-shrink: 0; }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   About & Panduan section
+   ──────────────────────────────────────────────────────────────── */
+.about-section {
+  max-width: 1280px;
+  margin: 2rem auto 0;
+  padding: 2rem 1.5rem 1rem;
+  border-top: 1px solid var(--border-base);
+}
+.about-section h2 {
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+.about-section > p.about-intro {
+  text-align: center;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  max-width: 720px;
+  margin: 0 auto 1.5rem;
+}
+.about-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  padding: 0;
+}
+.about-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-base);
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid var(--brand-main);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+.about-card[data-tool="pareto"]       { border-left-color: var(--brand-main); }
+.about-card[data-tool="controlchart"] { border-left-color: var(--accent-green); }
+.about-card[data-tool="histogram"]    { border-left-color: var(--accent-amber); }
+.about-card[data-tool="fishbone"]     { border-left-color: var(--accent-purple); }
+.about-card[data-tool="scatter"]      { border-left-color: var(--accent-red); }
+.about-card[data-tool="runchart"]     { border-left-color: var(--brand-light); }
+.about-card[data-tool="flowchart"]    { border-left-color: var(--brand-main); }
+
+.about-card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.about-icon {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  color: var(--text-primary);
+}
+.about-icon svg { width: 18px; height: 18px; }
+.about-card h3 {
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: var(--text-primary);
+  line-height: 1.2;
+  margin: 0;
+}
+.about-card h3 small {
+  display: block;
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+.about-card p.about-kegunaan {
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  opacity: 0.92;
+  margin: 0;
+}
+.about-steps-label {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 0.5rem;
+  font-weight: 600;
+}
+.about-card ol.about-steps {
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  opacity: 0.9;
+  margin: 0;
+}
+.about-card ol.about-steps li { margin-bottom: 0.25rem; }
+.about-card p.about-tips {
+  margin-top: 0.5rem;
+  font-size: 12px;
+  color: var(--accent-amber);
+  font-style: italic;
+  border-top: 1px dashed var(--border-base);
+  padding-top: 0.6rem;
+}
+
+@media (max-width: 480px) {
+  .about-section { padding: 1.5rem 1rem 0.5rem; }
+  .about-grid { grid-template-columns: 1fr; }
+}

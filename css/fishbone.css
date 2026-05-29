@@ -115,8 +115,9 @@
 #fb-canvas {
   width: 100%;
   height: auto;
-  min-height: 480px;
+  min-height: 460px;
   background: var(--bg-secondary);
   border-radius: var(--radius-md);
   display: block;
 }
+@media (min-width: 1024px) { #fb-canvas { min-height: 560px; } }
