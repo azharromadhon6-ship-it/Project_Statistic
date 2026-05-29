@@ -841,8 +841,11 @@ function initNavbarLinks() {
       if (href in NAV_LINK_MAP) {
         e.preventDefault();
         switchTab(NAV_LINK_MAP[href]);
-        const tabBar = document.querySelector('.tabs');
-        if (tabBar) tabBar.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // The inner .tabs bar is hidden now (FIX 2) — scroll to the
+        // active tool panel instead so the user sees the workspace.
+        const activePanel = document.getElementById('panel-' + NAV_LINK_MAP[href])
+                          || document.querySelector('.app-main');
+        if (activePanel) activePanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
       } else if (href === '#about') {
         e.preventDefault();
         const about = document.getElementById('about');

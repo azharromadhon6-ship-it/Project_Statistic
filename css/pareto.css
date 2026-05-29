@@ -9,6 +9,19 @@
 }
 /* ------------------------------------------------------ */
 
+/* FIX 1 — Threshold (fixed ~96px) + Unit (fills the rest) so the Unit
+   input stops overflowing the panel on desktop. The mobile rule in
+   main.css already gives width:100% inside @media (max-width: 480px). */
+#panel-pareto .field-row { gap: 12px; align-items: flex-end; }
+#panel-pareto .field-row > .field-group:first-child { flex: 0 0 96px; min-width: 0; }
+#panel-pareto .field-row > .field-group:last-child  { flex: 1 1 0; min-width: 0; }
+#panel-pareto .field-row > .field-group > input { width: 100%; min-width: 0; }
+#panel-pareto .input-panel { overflow: visible; }
+@media (max-width: 480px) {
+  #panel-pareto .field-row { flex-direction: column; }
+  #panel-pareto .field-row > .field-group { flex: unset; width: 100%; }
+}
+
 .pareto-table-wrapper {
   max-height: 340px;
   overflow-y: auto;
@@ -47,8 +60,11 @@
 .pareto-canvas-wrapper {
   position: relative;
   width: 100%;
-  height: 420px;
+  height: 500px;
   padding: 1rem;
+}
+@media (max-width: 768px) {
+  .pareto-canvas-wrapper { height: 320px; }
 }
 .pareto-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
 
@@ -64,21 +80,25 @@
 }
 .empty-state-pareto p { font-size: var(--text-sm); }
 
-/* Stat cards */
+/* Stat cards — shared rules used by every tool's bottom-of-chart strip */
 .pareto-stats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 0.75rem;
+  gap: 12px;
   padding: 0 1rem 1rem;
+  margin-top: 16px;
+}
+@media (min-width: 1024px) {
+  .pareto-stats { grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); }
 }
 .stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border-base);
   border-radius: var(--radius-sm);
-  padding: 0.85rem 1rem;
+  padding: 16px 18px;
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.35rem;
 }
 .stat-card.vital { border-color: var(--brand-main); }
 
@@ -90,9 +110,10 @@
   font-weight: 700;
 }
 .stat-value {
-  font-size: var(--text-xl);
+  font-size: 22px;
   font-family: var(--font-mono);
   font-weight: 600;
+  line-height: 1.2;
 }
 .stat-sub {
   font-size: var(--text-xs);

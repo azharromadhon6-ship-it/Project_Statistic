@@ -134,9 +134,13 @@
 .hist-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
 
 .hist-chart-area { padding: 1rem; }
-.hist-canvas-wrapper { position: relative; width: 100%; height: 420px; }
+.hist-canvas-wrapper { position: relative; width: 100%; height: 480px; }
 .hist-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
-#hist-canvas { min-height: 420px; }
+#hist-canvas { min-height: 480px; }
+@media (max-width: 768px) {
+  .hist-canvas-wrapper { height: 320px; }
+  #hist-canvas { min-height: 320px; }
+}
 
 .hist-stats {
   display: grid;

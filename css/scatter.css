@@ -54,9 +54,13 @@
 .sc-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
 
 .sc-chart-area { padding: 1rem; }
-.sc-canvas-wrapper { position: relative; width: 100%; height: 420px; }
+.sc-canvas-wrapper { position: relative; width: 100%; height: 480px; }
 .sc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
-#sc-canvas { min-height: 420px; }
+#sc-canvas { min-height: 480px; }
+@media (max-width: 768px) {
+  .sc-canvas-wrapper { height: 320px; }
+  #sc-canvas { min-height: 320px; }
+}
 
 .sc-stats {
   display: grid;

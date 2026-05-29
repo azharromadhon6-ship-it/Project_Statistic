@@ -102,9 +102,13 @@ input:focus, select:focus, textarea:focus {
   padding: 1.5rem;
 }
 
-/* ---------- Tabs ---------- */
+/* ---------- Tabs ----------
+   FIX 2 — The inner tab bar is hidden site-wide; the navbar at the
+   top of the page is now the single navigation surface. The element
+   stays in the DOM so initTabs / applyTabVisual / switchTab still
+   wire correctly when called from the navbar. */
 .tabs {
-  display: flex;
+  display: none !important;
   gap: 0.5rem;
   border-bottom: 1px solid var(--border-base);
   margin-bottom: 1.5rem;
@@ -140,13 +144,28 @@ input:focus, select:focus, textarea:focus {
   grid-template-columns: 1fr;
   gap: 1.25rem;
 }
-/* Tablet / small desktop: stack horizontally, tighter left panel. */
+/* Tablet (768-1024): fixed 320 px left panel. */
 @media (min-width: 768px) {
-  .tool-grid { grid-template-columns: minmax(280px, 320px) 1fr; }
+  .tool-grid {
+    grid-template-columns: 320px 1fr;
+    align-items: stretch;
+  }
 }
-/* Desktop: harder cap on left panel so chart gets ~70%+. */
+/* Desktop (≥1024): wider 380 px left panel so the input table + config
+   controls breathe; chart still claims the remaining width. */
 @media (min-width: 1024px) {
-  .tool-grid { grid-template-columns: minmax(280px, 300px) 1fr; }
+  .tool-grid {
+    grid-template-columns: 380px 1fr;
+    align-items: stretch;
+    min-height: calc(100vh - 220px);
+  }
+  .input-panel { padding: 24px 20px; }
+  /* Bigger panel typography */
+  .input-panel label { font-size: 13px; }
+  .input-panel input,
+  .input-panel select,
+  .input-panel textarea { font-size: 14px; padding: 10px 12px; }
+  .input-panel button.btn-primary { padding: 12px 16px; font-size: 14px; }
 }
 .workspace { min-height: 480px; }
 .workspace canvas,

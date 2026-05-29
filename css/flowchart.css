@@ -32,7 +32,7 @@
 #fc-canvas {
   width: 100%;
   height: 100%;
-  min-height: 480px;
+  min-height: 520px;
   cursor: grab;
   display: block;
   background:
@@ -40,6 +40,7 @@
   background-size: 24px 24px;
   border-radius: var(--radius-md);
 }
+@media (max-width: 768px) { #fc-canvas { min-height: 360px; } }
 
 /* Toolbar overlay (top-right) */
 .fc-toolbar {
