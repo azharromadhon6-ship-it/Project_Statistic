@@ -589,24 +589,33 @@ details[open] > summary { color: var(--text-primary); }
   color: var(--brand-light);
   padding-right: 28px;
 }
-.tool-guide-box .guide-desc {
-  font-size: 13.5px;
+.tool-guide-box .guide-body {
+  display: flex;
+  flex-direction: column;
+  margin: 6px 0 4px;
+}
+.tool-guide-box .guide-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border-base);
+}
+.tool-guide-box .guide-field:last-child { border-bottom: none; padding-bottom: 6px; }
+.tool-guide-box .guide-field-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--brand-light);
+  letter-spacing: 0.01em;
+}
+.tool-guide-box .guide-field-desc {
+  font-size: 12.5px;
   color: var(--text-primary);
-  opacity: 0.85;
-  margin-bottom: 18px;
+  opacity: 0.82;
   line-height: 1.6;
 }
-.tool-guide-box ol {
-  padding-left: 20px;
-  font-size: 13.5px;
-  line-height: 2;
-  color: var(--text-primary);
-  opacity: 0.92;
-  margin: 0;
-}
-.tool-guide-box ol li { margin-bottom: 0.25rem; }
 .tool-guide-box .guide-tips {
-  margin-top: 18px;
+  margin-top: 14px;
   padding: 12px 14px;
   background: rgba(251, 191, 36, 0.08);
   border-left: 3px solid var(--accent-amber);
@@ -632,4 +641,54 @@ details[open] > summary { color: var(--text-primary); }
 .btn-close-guide:hover {
   color: var(--text-primary);
   background: var(--bg-surface);
+}
+
+/* ────────────────────────────────────────────────────────────────
+   Action buttons group (Export PNG / CSV / SVG + Reset) — sits at
+   the bottom of each .input-panel since the old .export-bar footer
+   was removed. Reset spans the full grid row in its own outline style.
+   ──────────────────────────────────────────────────────────────── */
+.action-buttons-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-base);
+}
+.action-buttons-group > button {
+  font-size: 12px;
+  padding: 9px 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+.action-buttons-group .btn-export-png,
+.action-buttons-group .btn-export-csv,
+.action-buttons-group .btn-export-svg {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-base);
+  color: var(--text-primary);
+}
+.action-buttons-group .btn-export-png:hover,
+.action-buttons-group .btn-export-csv:hover,
+.action-buttons-group .btn-export-svg:hover {
+  background: var(--brand-main);
+  border-color: var(--brand-main);
+  color: #fff;
+}
+.action-buttons-group .btn-reset {
+  grid-column: 1 / -1;
+  background: transparent;
+  border: 1.5px solid var(--accent-red);
+  color: var(--accent-red);
+}
+.action-buttons-group .btn-reset:hover {
+  background: var(--accent-red);
+  color: #fff;
 }

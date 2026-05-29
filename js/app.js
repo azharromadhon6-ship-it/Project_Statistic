@@ -857,79 +857,136 @@ function initNavbarLinks() {
    ============================================================ */
 const TOOL_GUIDES = {
   flowchart: {
-    title: '⬡ Flowchart — Peta Alur Proses',
-    desc: 'Menggambarkan urutan langkah proses secara visual menggunakan simbol standar.',
-    steps: [
-      'Isi Label Step → pilih Tipe (Start / End / Process / Decision)',
-      'Klik Tambah Node',
-      'Pilih Dari & Ke → klik Tambah Koneksi',
-      'Klik Export PNG / SVG untuk menyimpan diagram'
+    title: '⬡ Flowchart',
+    fields: [
+      { name: 'Label Step',
+        desc: 'Nama atau deskripsi langkah proses. Contoh: "Periksa Kualitas", "Terima Order".' },
+      { name: 'Tipe Node',
+        desc: 'Start/End = titik awal/akhir proses. Process = langkah kerja. Decision = percabangan Ya/Tidak. Input/Output = data masuk/keluar.' },
+      { name: 'Warna',
+        desc: 'Warna latar node untuk membedakan kategori langkah secara visual.' },
+      { name: 'Dari & Ke',
+        desc: 'Pilih dua node yang ingin dihubungkan dengan panah. Dari = asal, Ke = tujuan alur.' },
+      { name: 'Label Koneksi',
+        desc: 'Teks pada panah penghubung. Isi "Ya" atau "Tidak" untuk node Decision.' }
     ],
-    tips: 'Mulai dengan node Start dan akhiri dengan node End.'
+    tips: 'Selalu mulai dengan node Start dan akhiri dengan End agar diagram valid.'
   },
+
   pareto: {
-    title: '📊 Pareto Chart — Prioritas 80/20',
-    desc: 'Menemukan 20% penyebab yang berkontribusi 80% terhadap masalah.',
-    steps: [
-      'Isi Kategori dan Frekuensi kejadian',
-      'Set Threshold % (default 80)',
-      'Klik Render / Update Chart',
-      'Bar merah = Vital Few — fokus perbaikan di sini'
+    title: '📊 Pareto Chart',
+    fields: [
+      { name: 'Judul Chart',
+        desc: 'Nama chart yang akan tampil di bagian atas grafik. Contoh: "Cacat Produksi Baju Juli 2024".' },
+      { name: 'Threshold %',
+        desc: 'Batas persentase kumulatif untuk menentukan "Vital Few". Default 80 berarti kategori yang membentuk 80% masalah akan disorot merah.' },
+      { name: 'Unit',
+        desc: 'Satuan frekuensi data. Contoh: "kasus", "unit", "kejadian", "pcs".' },
+      { name: 'Label Sumbu Y',
+        desc: 'Nama sumbu vertikal kiri. Contoh: "Jumlah Cacat", "Frekuensi Kejadian".' },
+      { name: 'Kategori',
+        desc: 'Nama jenis cacat atau masalah. Contoh: "Jahitan Lepas", "Warna Pudar", "Ukuran Salah".' },
+      { name: 'Frekuensi',
+        desc: 'Jumlah kejadian untuk kategori tersebut. Harus angka positif.' }
     ],
-    tips: 'Minimal 3 kategori untuk analisis yang bermakna.'
+    tips: 'Minimal 3 kategori. Sistem akan otomatis mengurutkan dari frekuensi terbesar.'
   },
+
   controlchart: {
-    title: '📈 Control Chart — Kendali Proses (SPC)',
-    desc: 'Memantau stabilitas proses menggunakan batas kendali UCL dan LCL.',
-    steps: [
-      'Pilih Tipe: I-MR (individual) atau X̄-R (subgroup)',
-      'Input minimal 8 nilai pengukuran berurutan',
-      'Klik Render Chart',
-      'Titik MERAH = Out of Control → investigasi penyebabnya'
+    title: '📈 Control Chart',
+    fields: [
+      { name: 'Judul Chart',
+        desc: 'Nama proses yang dimonitor. Contoh: "Berat Kemasan Line 3".' },
+      { name: 'Tipe',
+        desc: 'I-MR = untuk 1 pengukuran per waktu (paling umum). X̄-R = untuk rata-rata beberapa pengukuran per waktu (subgroup).' },
+      { name: 'Sigma (σ)',
+        desc: 'Multiplier batas kendali. Default 3 = standar industri (99.73% data normal masuk kendali). Jangan ubah kecuali ada kebutuhan khusus.' },
+      { name: 'Subgroup n',
+        desc: 'Jumlah pengukuran per subgroup. Hanya aktif untuk tipe X̄-R. Contoh: 5 berarti setiap titik adalah rata-rata 5 pengukuran.' },
+      { name: 'Unit',
+        desc: 'Satuan pengukuran. Contoh: "mm", "gram", "menit", "°C".' },
+      { name: 'Nilai',
+        desc: 'Data pengukuran berurutan dari waktu ke waktu. Minimal 8 nilai. Contoh: berat produk per jam produksi.' }
     ],
-    tips: 'I-MR untuk 1 pengukuran per waktu. X̄-R untuk rata-rata subgroup.'
+    tips: 'Urutan data sangat penting — masukkan sesuai urutan waktu pengambilan data.'
   },
+
   histogram: {
-    title: '📉 Histogram — Distribusi & Kapabilitas',
-    desc: 'Melihat sebaran data dan menghitung kapabilitas proses (Cp / Cpk).',
-    steps: [
-      'Input nilai pengukuran (minimal 5)',
-      'Isi LSL dan USL jika ada batas spesifikasi',
-      'Pilih Method Bin (Sturges = otomatis)',
-      'Klik Render Chart — lihat Cp / Cpk di statistik bawah'
+    title: '📉 Histogram',
+    fields: [
+      { name: 'Judul Chart',
+        desc: 'Nama data yang dianalisis. Contoh: "Distribusi Berat Produk Minggu 1".' },
+      { name: 'Method Bin',
+        desc: 'Cara menentukan lebar kelas. Sturges = otomatis cocok untuk data <200. Freedman-Diaconis = lebih akurat untuk data banyak. Manual = kamu tentukan sendiri.' },
+      { name: 'Jumlah Bin',
+        desc: 'Aktif jika Method = Manual. Jumlah kelas/kolom histogram. Rekomendasi: 5–20 bin.' },
+      { name: 'LSL (Lower Spec Limit)',
+        desc: 'Batas spesifikasi bawah dari pelanggan/standar. Contoh: berat minimum produk = 95 gram. Kosongkan jika tidak ada spesifikasi.' },
+      { name: 'USL (Upper Spec Limit)',
+        desc: 'Batas spesifikasi atas. Contoh: berat maksimum = 105 gram. LSL dan USL dibutuhkan untuk menghitung Cp dan Cpk.' },
+      { name: 'Unit',
+        desc: 'Satuan data. Contoh: "gram", "mm", "detik".' },
+      { name: 'Kurva Normal',
+        desc: 'Centang untuk menampilkan kurva distribusi normal di atas histogram sebagai referensi.' },
+      { name: 'Nilai',
+        desc: 'Data pengukuran individual. Minimal 5 nilai. Contoh: berat setiap produk yang disampling.' }
     ],
-    tips: 'Target Cpk ≥ 1.33. Cpk < 1.0 = proses tidak kapabel.'
+    tips: 'Isi LSL dan USL untuk mendapatkan nilai Cp dan Cpk. Cpk ≥ 1.33 = proses kapabel.'
   },
+
   fishbone: {
-    title: '🐟 Fishbone — Analisis Akar Masalah',
-    desc: 'Mengidentifikasi penyebab potensial dari masalah menggunakan 6M.',
-    steps: [
-      'Isi Problem Statement di kotak Effect',
-      'Pilih kategori 6M yang relevan',
-      'Tambah causes di setiap kategori',
-      'Klik Render Diagram'
+    title: '🐟 Fishbone Diagram',
+    fields: [
+      { name: 'Problem Statement',
+        desc: 'Masalah utama yang ingin dianalisis — ditulis jelas dan spesifik. Contoh: "Produk Cacat meningkat 15% di Juli 2024". Ini akan menjadi kepala ikan.' },
+      { name: 'Kategori 6M',
+        desc: 'Pilih kategori yang relevan: Man (faktor manusia), Machine (mesin/alat), Material (bahan baku), Method (prosedur), Measurement (pengukuran), Environment (lingkungan).' },
+      { name: 'Causes per Kategori',
+        desc: 'Penyebab potensial untuk setiap kategori. Satu baris = satu penyebab. Contoh untuk Man: "Operator kurang terlatih", "Kelelahan shift malam".' }
     ],
-    tips: '6M: Man, Machine, Material, Method, Measurement, Environment.'
+    tips: 'Gunakan teknik 5 Why untuk menemukan penyebab di setiap kategori sebelum mengisi.'
   },
+
   scatter: {
-    title: '🔵 Scatter Diagram — Korelasi Variabel',
-    desc: 'Melihat hubungan antara dua variabel proses.',
-    steps: [
-      'Isi pasangan nilai X dan Y (minimal 5)',
-      'Aktifkan Garis Regresi untuk melihat tren',
-      'Klik Render Chart'
+    title: '🔵 Scatter Diagram',
+    fields: [
+      { name: 'Judul Chart',
+        desc: 'Nama hubungan yang dianalisis. Contoh: "Suhu vs Kekuatan Tarik".' },
+      { name: 'Label X',
+        desc: 'Nama variabel independen (sumbu horizontal). Contoh: "Suhu (°C)", "Kecepatan Mesin (rpm)".' },
+      { name: 'Label Y',
+        desc: 'Nama variabel dependen (sumbu vertikal). Contoh: "Kekuatan Tarik (N)", "Cacat per Batch".' },
+      { name: 'Garis Regresi',
+        desc: 'Centang untuk menampilkan garis tren linear. Berguna untuk melihat arah korelasi.' },
+      { name: 'Conf. Band 95%',
+        desc: 'Centang untuk menampilkan area kepercayaan 95% di sekitar garis regresi.' },
+      { name: 'X & Y (data)',
+        desc: 'Pasangan nilai pengukuran. X = variabel sebab, Y = variabel akibat. Minimal 5 pasang.' }
     ],
-    tips: 'Naik ke kanan = korelasi positif. Turun ke kanan = negatif.'
+    tips: 'Korelasi kuat jika titik membentuk pola garis lurus. Korelasi lemah jika titik menyebar acak.'
   },
+
   runchart: {
-    title: '📏 Run Chart — Tren dari Waktu ke Waktu',
-    desc: 'Melihat tren, siklus, atau pergeseran proses dari median.',
-    steps: [
-      'Input nilai urut berdasarkan waktu (minimal 10)',
-      'Aktifkan Median dan Trend untuk analisis lengkap',
-      'Klik Render Chart'
+    title: '📏 Run Chart',
+    fields: [
+      { name: 'Judul Chart',
+        desc: 'Nama proses yang dipantau. Contoh: "Waktu Siklus Produksi Minggu 3".' },
+      { name: 'Label X',
+        desc: 'Nama sumbu waktu. Contoh: "Jam ke-", "Hari", "Shift".' },
+      { name: 'Label Y',
+        desc: 'Nama nilai yang diukur. Contoh: "Waktu (menit)", "Jumlah Unit".' },
+      { name: 'Median',
+        desc: 'Centang untuk menampilkan garis median sebagai referensi tengah data.' },
+      { name: 'Anotasi',
+        desc: 'Centang untuk menampilkan penanda run di atas/bawah median.' },
+      { name: 'Trend',
+        desc: 'Centang untuk menampilkan garis tren linear pada data.' },
+      { name: 'Label/Waktu',
+        desc: 'Label untuk setiap titik data. Contoh: "Shift 1", "08:00", "Hari 1". Boleh dikosongkan.' },
+      { name: 'Nilai',
+        desc: 'Nilai pengukuran berurutan sesuai waktu. Minimal 10 nilai untuk analisis run yang valid.' }
     ],
-    tips: 'Lebih sederhana dari Control Chart untuk pemantauan awal proses.'
+    tips: '6 atau lebih titik naik/turun berturut-turut = indikasi tren. Perlu investigasi penyebab.'
   }
 };
 
@@ -937,16 +994,25 @@ function showToolGuide(toolName) {
   const g = TOOL_GUIDES[toolName];
   const modal = document.getElementById('tool-guide-modal');
   if (!g || !modal) return;
-  // textContent for title / desc / tips — guide data is hard-coded, not user input
   modal.querySelector('h3').textContent = g.title;
-  modal.querySelector('.guide-desc').textContent = g.desc;
-  const ol = modal.querySelector('ol');
-  ol.innerHTML = '';
-  g.steps.forEach(s => {
-    const li = document.createElement('li');
-    li.textContent = s;
-    ol.appendChild(li);
+
+  // Build the per-field list via DOM API (no innerHTML — guide data is
+  // hard-coded but the discipline keeps the codebase safe by default).
+  const body = modal.querySelector('.guide-body');
+  body.innerHTML = '';
+  g.fields.forEach(f => {
+    const row = document.createElement('div');
+    row.className = 'guide-field';
+    const name = document.createElement('span');
+    name.className = 'guide-field-name';
+    name.textContent = f.name;
+    const desc = document.createElement('span');
+    desc.className = 'guide-field-desc';
+    desc.textContent = f.desc;
+    row.append(name, desc);
+    body.appendChild(row);
   });
+
   modal.querySelector('.guide-tips').textContent = '💡 ' + g.tips;
   modal.classList.remove('hidden');
   modal.querySelector('.btn-close-guide')?.focus();
