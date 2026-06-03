@@ -31,8 +31,11 @@ const AppState = {
     rows: []
   },
   controlChart: {
-    title: '', type: 'imr', sigma: 3, subgroupSize: 2, unit: '',
-    rows: []                 // { id, value }
+    // p-Chart (Peta Kendali Proporsi): each row = one period with
+    // its production count (n) and defect count (np).
+    title: '', unit: '', labelY: '',
+    rows: [],                // { id, period, n, np }
+    stats: {}                // cache of last-computed stats
   },
   histogram: {
     title: '', binMethod: 'sturges',
@@ -307,11 +310,10 @@ function clearState() {
   AppState.pareto.yLabel       = '';
   AppState.pareto.rows         = [];
   AppState.controlChart.title  = '';
-  AppState.controlChart.type   = 'imr';
-  AppState.controlChart.sigma  = 3;
-  AppState.controlChart.subgroupSize = 2;
   AppState.controlChart.unit   = '';
+  AppState.controlChart.labelY = '';
   AppState.controlChart.rows   = [];
+  AppState.controlChart.stats  = {};
   AppState.histogram.title      = '';
   AppState.histogram.binMethod  = 'sturges';
   AppState.histogram.showNormal = false;
@@ -412,10 +414,14 @@ function restoreState() {
     if (p.controlChart) {
       const cc = p.controlChart;
       if (!Array.isArray(cc.rows)) cc.rows = [];
-      if (!['imr','xbar'].includes(cc.type)) cc.type = 'imr';
-      cc.sigma = Math.max(1, Math.min(4, typeof cc.sigma === 'number' ? cc.sigma : 3));
-      cc.subgroupSize = Math.max(2, Math.min(10, typeof cc.subgroupSize === 'number' ? cc.subgroupSize : 2));
-      cc.rows = cc.rows.filter(r => r && typeof r.id === 'string' && typeof r.value === 'number');
+      if (typeof cc.labelY !== 'string') cc.labelY = '';
+      // p-Chart schema: { id, period, n, np }. Strip legacy fields from
+      // any older saved sessions so they don't leak into AppState.
+      delete cc.type; delete cc.sigma; delete cc.subgroupSize;
+      cc.rows = cc.rows.filter(r => r && typeof r.id === 'string' &&
+                                    typeof r.n === 'number' && typeof r.np === 'number');
+      cc.rows.forEach(r => { if (typeof r.period !== 'string') r.period = ''; });
+      if (!cc.stats || typeof cc.stats !== 'object') cc.stats = {};
       Object.assign(AppState.controlChart, cc);
     }
 
@@ -516,7 +522,9 @@ function restoreState() {
     fcSelectedNodes = new Set();
     window.fcSelectedNodes = fcSelectedNodes;
 
-    const ccValid   = AppState.controlChart.rows.some(r => typeof r.value === 'number' && !isNaN(r.value));
+    const ccValid   = AppState.controlChart.rows.some(r =>
+      typeof r.n === 'number' && r.n > 0 &&
+      typeof r.np === 'number' && r.np >= 0 && r.np <= r.n);
     const histValid = AppState.histogram.rows.some(r => {
       if (r.value === null || r.value === undefined) return false;
       if (typeof r.value === 'number') return !isNaN(r.value);
@@ -638,8 +646,10 @@ function renderActiveTab() {
     }
   } else if (tab === 'controlchart') {
     const { rows } = AppState.controlChart;
-    const valid = rows.filter(r => typeof r.value === 'number' && !isNaN(r.value));
-    if (valid.length >= 8 && typeof window.renderControlChart === 'function') {
+    const valid = rows.filter(r =>
+      typeof r.n  === 'number' && r.n > 0 &&
+      typeof r.np === 'number' && r.np >= 0 && r.np <= r.n);
+    if (valid.length >= 5 && typeof window.renderControlChart === 'function') {
       window.renderControlChart(rows, window.getControlChartOptions ? window.getControlChartOptions() : {});
     } else {
       showEmptyState('controlchart');
@@ -895,22 +905,20 @@ const TOOL_GUIDES = {
   },
 
   controlchart: {
-    title: '📈 Control Chart',
+    title: '📈 p-Chart — Peta Kendali Proporsi',
     fields: [
       { name: 'Judul Chart',
-        desc: 'Nama proses yang dimonitor. Contoh: "Berat Kemasan Line 3".' },
-      { name: 'Tipe',
-        desc: 'I-MR = untuk 1 pengukuran per waktu (paling umum). X̄-R = untuk rata-rata beberapa pengukuran per waktu (subgroup).' },
-      { name: 'Sigma (σ)',
-        desc: 'Multiplier batas kendali. Default 3 = standar industri (99.73% data normal masuk kendali). Jangan ubah kecuali ada kebutuhan khusus.' },
-      { name: 'Subgroup n',
-        desc: 'Jumlah pengukuran per subgroup. Hanya aktif untuk tipe X̄-R. Contoh: 5 berarti setiap titik adalah rata-rata 5 pengukuran.' },
-      { name: 'Unit',
-        desc: 'Satuan pengukuran. Contoh: "mm", "gram", "menit", "°C".' },
-      { name: 'Nilai',
-        desc: 'Data pengukuran berurutan dari waktu ke waktu. Minimal 8 nilai. Contoh: berat produk per jam produksi.' }
+        desc: 'Nama proses yang dimonitor. Contoh: "Proporsi Cacat Produksi Baju 2024".' },
+      { name: 'Label Sumbu Y',
+        desc: 'Nama sumbu vertikal chart. Default: "Proporsi Cacat (p)". Bisa diubah sesuai konteks.' },
+      { name: 'Periode / Label',
+        desc: 'Nama periode waktu pengamatan. Contoh: "Jan", "Minggu 1", "Shift Pagi".' },
+      { name: 'Produksi (n)',
+        desc: 'Jumlah total unit yang diproduksi atau diperiksa pada periode tersebut. Harus > 0.' },
+      { name: 'Cacat (np)',
+        desc: 'Jumlah unit cacat / tidak sesuai pada periode tersebut. Harus ≥ 0 dan ≤ n.' }
     ],
-    tips: 'Urutan data sangat penting — masukkan sesuai urutan waktu pengambilan data.'
+    tips: 'Sistem menghitung otomatis: p = np/n, p̄ (CL), UCL, dan LCL per titik. LCL tidak pernah negatif. Titik merah = Out of Control.'
   },
 
   histogram: {

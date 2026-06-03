@@ -1,76 +1,98 @@
 /* ============================================================
-   controlchart.js — Shewhart Control Chart engine (I-MR / X̄-R)
-   Loaded after app.js + Chart.js. Implements §3D.
+   controlchart.js — p-Chart (Peta Kendali Proporsi) engine
+   Replaces the previous I-MR / X̄-R implementation entirely.
+
+   Input per row : { id, period, n, np }
+   Statistics    : pᵢ = npᵢ / nᵢ,  p̄ = Σnp / Σn
+   Control limits: per-point (variable) because nᵢ may vary —
+     UCLᵢ = p̄ + 3·√(p̄(1−p̄) / nᵢ)
+     LCLᵢ = max(0, p̄ − 3·√(p̄(1−p̄) / nᵢ))
    ============================================================ */
 (function () {
 
-  const CC_CONSTANTS = {
-    2:  { A2: 1.880, D3: 0,     D4: 3.267, d2: 1.128 },
-    3:  { A2: 1.023, D3: 0,     D4: 2.574, d2: 1.693 },
-    4:  { A2: 0.729, D3: 0,     D4: 2.282, d2: 2.059 },
-    5:  { A2: 0.577, D3: 0,     D4: 2.114, d2: 2.326 },
-    6:  { A2: 0.483, D3: 0,     D4: 2.004, d2: 2.534 },
-    7:  { A2: 0.419, D3: 0.076, D4: 1.924, d2: 2.704 },
-    8:  { A2: 0.373, D3: 0.136, D4: 1.864, d2: 2.847 },
-    9:  { A2: 0.337, D3: 0.184, D4: 1.816, d2: 2.970 },
-    10: { A2: 0.308, D3: 0.223, D4: 1.777, d2: 3.078 }
-  };
-
-  // local cache for export
   let lastResult = null;
 
-  /* ---------- helpers ---------- */
-  function nnum(s) {
-    if (typeof window.normalizeNumber === 'function') return window.normalizeNumber(String(s));
-    const v = parseFloat(String(s).replace(',', '.'));
-    return isNaN(v) ? NaN : v;
-  }
-
+  /* ────────────────────────────────────────────────────────────
+     Options + state sync
+     ──────────────────────────────────────────────────────────── */
   function ccGetOptions() {
-    const titleEl = document.getElementById('cc-title');
-    const typeEl  = document.getElementById('cc-type');
-    const sigEl   = document.getElementById('cc-sigma');
-    const sgEl    = document.getElementById('cc-subgroup-size');
-    const unitEl  = document.getElementById('cc-unit');
-    const sigma   = parseFloat(sigEl?.value);
-    const sgSize  = parseInt(sgEl?.value, 10);
+    const titleEl  = document.getElementById('cc-title');
+    const labelYEl = document.getElementById('cc-label-y');
     return {
-      title: sanitizeText(titleEl?.value || '') || 'Control Chart',
-      type: (typeEl?.value === 'xbar') ? 'xbar' : 'imr',
-      sigmaMultiplier: (!isNaN(sigma) && sigma >= 1 && sigma <= 4) ? sigma : 3,
-      subgroupSize: (!isNaN(sgSize) && sgSize >= 2 && sgSize <= 10) ? sgSize : 2,
-      unitLabel: sanitizeText(unitEl?.value || '') || 'Nilai'
+      title:  sanitizeText(titleEl?.value || '') || 'p-Chart',
+      labelY: sanitizeText(labelYEl?.value || '').trim() || 'Proporsi Cacat (p)'
     };
   }
   window.getControlChartOptions = ccGetOptions;
 
   function ccSyncStateFromUI() {
     const o = ccGetOptions();
-    AppState.controlChart.title = o.title === 'Control Chart' ? '' : o.title;
-    AppState.controlChart.type = o.type;
-    AppState.controlChart.sigma = o.sigmaMultiplier;
-    AppState.controlChart.subgroupSize = o.subgroupSize;
-    AppState.controlChart.unit = document.getElementById('cc-unit')?.value || '';
+    AppState.controlChart.title  = (o.title === 'p-Chart') ? '' : o.title;
+    AppState.controlChart.labelY = (o.labelY === 'Proporsi Cacat (p)') ? '' : o.labelY;
   }
 
-  /* ---------- input table ---------- */
-  function ccAddRowToDOM(id, value) {
+  /* ────────────────────────────────────────────────────────────
+     Input table (4 columns: Periode, n, np, ×)
+     ──────────────────────────────────────────────────────────── */
+  function ccAddRowToDOM(id, period, n, np) {
     const tbody = document.getElementById('cc-rows-container');
     if (!tbody) return;
     const tr = document.createElement('tr');
     tr.dataset.id = id;
+
     const tdIdx = document.createElement('td');
     tdIdx.className = 'idx';
-    const tdVal = document.createElement('td');
-    const inp = document.createElement('input');
-    inp.type = 'text';
-    inp.value = value === '' || value === undefined || value === null ? '' : String(value);
-    inp.placeholder = '0';
-    inp.addEventListener('blur',  () => ccOnRowBlur(id, inp));
-    inp.addEventListener('keydown', e => {
-      if (e.key === 'Enter') { e.preventDefault(); ccOnRowBlur(id, inp); ccAddRow(true); }
+
+    // Periode
+    const tdPeriod = document.createElement('td');
+    const periodInp = document.createElement('input');
+    periodInp.type = 'text';
+    periodInp.className = 'cc-period-input';
+    periodInp.dataset.id = id;
+    periodInp.value = period || '';
+    periodInp.placeholder = 'Jan 2024';
+    periodInp.maxLength = 30;
+    periodInp.addEventListener('blur', () => ccOnPeriodBlur(id, periodInp));
+    tdPeriod.appendChild(periodInp);
+
+    // n (production)
+    const tdN = document.createElement('td');
+    const nInp = document.createElement('input');
+    nInp.type = 'number';
+    nInp.min = '1';
+    nInp.max = '999999';
+    nInp.step = '1';
+    nInp.className = 'cc-n-input';
+    nInp.dataset.id = id;
+    nInp.placeholder = '0';
+    nInp.value = (n === '' || n === null || n === undefined ||
+                  (typeof n === 'number' && isNaN(n))) ? '' : String(n);
+    nInp.addEventListener('blur', () => ccOnNumBlur(id, 'n', nInp));
+    tdN.appendChild(nInp);
+
+    // np (defects)
+    const tdNp = document.createElement('td');
+    const npInp = document.createElement('input');
+    npInp.type = 'number';
+    npInp.min = '0';
+    npInp.max = '999999';
+    npInp.step = '1';
+    npInp.className = 'cc-np-input';
+    npInp.dataset.id = id;
+    npInp.placeholder = '0';
+    npInp.value = (np === '' || np === null || np === undefined ||
+                   (typeof np === 'number' && isNaN(np))) ? '' : String(np);
+    npInp.addEventListener('blur', () => ccOnNumBlur(id, 'np', npInp));
+    npInp.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        ccOnNumBlur(id, 'np', npInp);
+        ccAddRow(true);
+      }
     });
-    tdVal.appendChild(inp);
+    tdNp.appendChild(npInp);
+
+    // Remove button
     const tdBtn = document.createElement('td');
     const btn = document.createElement('button');
     btn.className = 'btn-remove-row';
@@ -79,11 +101,11 @@
     btn.title = 'Hapus baris';
     btn.addEventListener('click', () => ccRemoveRow(id));
     tdBtn.appendChild(btn);
-    tr.append(tdIdx, tdVal, tdBtn);
+
+    tr.append(tdIdx, tdPeriod, tdN, tdNp, tdBtn);
     tbody.appendChild(tr);
     ccRefreshIndices();
   }
-  window.ccAddRowToDOM = ccAddRowToDOM;
 
   function ccRefreshIndices() {
     const tbody = document.getElementById('cc-rows-container');
@@ -94,14 +116,22 @@
     });
   }
 
-  function ccOnRowBlur(id, inp) {
-    const raw = inp.value.trim();
+  function ccOnPeriodBlur(id, inp) {
     const row = AppState.controlChart.rows.find(r => r.id === id);
     if (!row) return;
-    if (raw === '') { row.value = NaN; inp.classList.remove('invalid'); saveState(); return; }
-    const v = nnum(raw);
-    if (isNaN(v)) { inp.classList.add('invalid'); row.value = NaN; }
-    else { inp.classList.remove('invalid'); row.value = v; }
+    row.period = sanitizeText(inp.value).slice(0, 30);
+    saveState();
+  }
+
+  function ccOnNumBlur(id, field, inp) {
+    const row = AppState.controlChart.rows.find(r => r.id === id);
+    if (!row) return;
+    const raw = inp.value.trim();
+    inp.classList.remove('invalid');
+    if (raw === '') { row[field] = NaN; saveState(); return; }
+    const v = parseInt(raw, 10);
+    if (isNaN(v) || v < 0) { inp.classList.add('invalid'); row[field] = NaN; }
+    else { row[field] = v; }
     saveState();
   }
 
@@ -111,252 +141,196 @@
       return;
     }
     const id = generateId();
-    AppState.controlChart.rows.push({ id, value: NaN });
-    ccAddRowToDOM(id, '');
+    AppState.controlChart.rows.push({ id, period: '', n: NaN, np: NaN });
+    ccAddRowToDOM(id, '', '', '');
     saveState();
     if (focusNew) {
       const tbody = document.getElementById('cc-rows-container');
-      const inp = tbody.lastElementChild?.querySelector('input');
-      inp?.focus();
+      // focus the Periode input (first input cell)
+      tbody.lastElementChild?.querySelector('td:nth-child(2) input')?.focus();
     }
   }
 
   function ccRemoveRow(id) {
     AppState.controlChart.rows = AppState.controlChart.rows.filter(r => r.id !== id);
-    const tbody = document.getElementById('cc-rows-container');
-    const tr = tbody?.querySelector(`tr[data-id="${id}"]`);
-    tr?.remove();
+    document.getElementById('cc-rows-container')
+      ?.querySelector(`tr[data-id="${id}"]`)?.remove();
     ccRefreshIndices();
     saveState();
   }
+  window.removeCCRow = ccRemoveRow;
 
   function ccPopulateTable(rows) {
     const tbody = document.getElementById('cc-rows-container');
     if (!tbody) return;
     tbody.innerHTML = '';
     if (rows.length === 0) {
-      // seed with 8 empty rows (minimum needed)
-      for (let i = 0; i < 8; i++) {
+      // seed with 5 empty rows
+      for (let i = 0; i < 5; i++) {
         const id = generateId();
-        AppState.controlChart.rows.push({ id, value: NaN });
-        ccAddRowToDOM(id, '');
+        AppState.controlChart.rows.push({ id, period: '', n: NaN, np: NaN });
+        ccAddRowToDOM(id, '', '', '');
       }
     } else {
-      rows.forEach(r => ccAddRowToDOM(r.id, isNaN(r.value) ? '' : r.value));
+      rows.forEach(r => ccAddRowToDOM(
+        r.id,
+        r.period || '',
+        (typeof r.n  === 'number' && !isNaN(r.n))  ? r.n  : '',
+        (typeof r.np === 'number' && !isNaN(r.np)) ? r.np : ''
+      ));
     }
   }
 
-  /* ---------- sync UI from state (called by app.js after restore) ---------- */
   function ccSyncUI() {
-    const titleEl = document.getElementById('cc-title');
-    const typeEl  = document.getElementById('cc-type');
-    const sigEl   = document.getElementById('cc-sigma');
-    const sgEl    = document.getElementById('cc-subgroup-size');
-    const unitEl  = document.getElementById('cc-unit');
-    const cc = AppState.controlChart;
-    if (titleEl) titleEl.value = cc.title || '';
-    if (typeEl)  typeEl.value  = cc.type || 'imr';
-    if (sigEl)   sigEl.value   = cc.sigma || 3;
-    if (sgEl)    sgEl.value    = cc.subgroupSize || 2;
-    if (unitEl)  unitEl.value  = cc.unit || '';
-    if (sgEl) sgEl.disabled = (typeEl?.value !== 'xbar');
-    ccPopulateTable(cc.rows.slice());
+    const titleEl  = document.getElementById('cc-title');
+    const labelYEl = document.getElementById('cc-label-y');
+    const c = AppState.controlChart;
+    if (titleEl)  titleEl.value  = c.title  || '';
+    if (labelYEl) labelYEl.value = c.labelY || '';
+    ccPopulateTable(c.rows.slice());
   }
   window.ccSyncUI = ccSyncUI;
 
-  /* ---------- statistics panel ---------- */
-  function ccRenderStats(stats, opts, type) {
+  /* ────────────────────────────────────────────────────────────
+     p-Chart calculation
+     ──────────────────────────────────────────────────────────── */
+  function calcPChart(rows) {
+    const n = rows.length;
+    if (n < 2) return null;
+
+    const ps = rows.map(r => r.n > 0 ? r.np / r.n : 0);
+    const totalNP = rows.reduce((s, r) => s + r.np, 0);
+    const totalN  = rows.reduce((s, r) => s + r.n,  0);
+    const pBar = totalN > 0 ? totalNP / totalN : 0;
+    const variance = pBar * (1 - pBar);
+
+    const UCLs = rows.map(r => pBar + 3 * Math.sqrt(variance / r.n));
+    const LCLs = rows.map(r => Math.max(0, pBar - 3 * Math.sqrt(variance / r.n)));
+    const UCL_avg = UCLs.reduce((s, v) => s + v, 0) / n;
+    const LCL_avg = LCLs.reduce((s, v) => s + v, 0) / n;
+
+    const oocIdx = ps.map((p, i) => p > UCLs[i] || p < LCLs[i]);
+
+    const labels = rows.map((r, i) =>
+      (r.period && r.period.trim() !== '') ? r.period : '#' + (i + 1)
+    );
+
+    return { ps, pBar, UCLs, LCLs, UCL_avg, LCL_avg, oocIdx, totalN, totalNP, labels };
+  }
+
+  /* ────────────────────────────────────────────────────────────
+     Stats panel
+     ──────────────────────────────────────────────────────────── */
+  function ccRenderStats(stats) {
     const el = document.getElementById('cc-stats');
     if (!el) return;
     el.innerHTML = '';
-    const cards = [];
-    if (type === 'imr') {
-      cards.push(['N',         String(stats.n)]);
-      cards.push(['Mean (X̄)', stats.mean.toFixed(3)]);
-      cards.push(['σ̂ (MR̄/d2)', stats.stdDev.toFixed(3)]);
-      cards.push(['UCL',       stats.UCL.toFixed(3)]);
-      cards.push(['CL',        stats.CL.toFixed(3)]);
-      cards.push(['LCL',       stats.LCL.toFixed(3)]);
-      cards.push(['σ Multiplier', opts.sigmaMultiplier.toFixed(1)]);
-      cards.push(['OOC Points', String(stats.oocCount)]);
-    } else {
-      cards.push(['N total',   String(stats.n * stats.k)]);
-      cards.push(['Subgroup n', String(stats.n)]);
-      cards.push(['k subgroup', String(stats.k)]);
-      cards.push(['Mean (X̄̄)', stats.mean.toFixed(3)]);
-      cards.push(['R̄',         stats.RBar.toFixed(3)]);
-      cards.push(['UCL X̄',     stats.UCL_x.toFixed(3)]);
-      cards.push(['LCL X̄',     stats.LCL_x.toFixed(3)]);
-      cards.push(['UCL R',     stats.UCL_r.toFixed(3)]);
-      cards.push(['OOC X̄',     String(stats.oocX)]);
-      cards.push(['OOC R',      String(stats.oocR)]);
-    }
-    cards.forEach(([label, val]) => {
-      const card = document.createElement('div');
-      card.className = 'stat-card';
-      const l = document.createElement('div');
-      l.className = 'stat-label';
-      l.textContent = label;
-      const v = document.createElement('div');
-      v.className = 'stat-value';
-      v.textContent = val;
-      card.append(l, v);
-      el.appendChild(card);
-    });
-    const totalOOC = type === 'imr' ? stats.oocCount : (stats.oocX + stats.oocR);
-    const badge = document.createElement('div');
-    badge.className = 'cc-status-badge ' + (totalOOC === 0 ? 'stable' : 'unstable');
-    badge.textContent = totalOOC === 0 ? 'PROSES STABIL' : 'PROSES TIDAK STABIL';
-    el.appendChild(badge);
+
+    const mkCard = (label, value, id) => {
+      const c = document.createElement('div');
+      c.className = 'stat-card';
+      if (id) c.id = id;
+      const l = document.createElement('div'); l.className = 'stat-label'; l.textContent = label;
+      const v = document.createElement('div'); v.className = 'stat-value'; v.textContent = value;
+      c.append(l, v);
+      return c;
+    };
+
+    const oocCount = stats.oocIdx.filter(Boolean).length;
+    const pct = (v) => (v * 100).toFixed(2) + '%';
+
+    el.appendChild(mkCard('Total n',    String(stats.totalN),  'cc-stat-total-n'));
+    el.appendChild(mkCard('Total np',   String(stats.totalNP), 'cc-stat-total-np'));
+    el.appendChild(mkCard('p̄ (CL)',     pct(stats.pBar),       'cc-stat-pbar'));
+    el.appendChild(mkCard('UCL avg',    pct(stats.UCL_avg),    'cc-stat-ucl'));
+    el.appendChild(mkCard('LCL avg',    pct(stats.LCL_avg),    'cc-stat-lcl'));
+    el.appendChild(mkCard('OOC Points', String(oocCount),      'cc-stat-ooc'));
+
+    // Full-width status card
+    const statusCard = document.createElement('div');
+    statusCard.id = 'cc-stat-status';
+    statusCard.className = 'stat-card cc-status-card ' + (oocCount === 0 ? 'stable' : 'unstable');
+    statusCard.style.gridColumn = '1 / -1';
+    const sLabel = document.createElement('div');
+    sLabel.className = 'stat-label';
+    sLabel.textContent = 'STATUS';
+    const sValue = document.createElement('div');
+    sValue.className = 'stat-value';
+    sValue.textContent = oocCount === 0
+      ? 'PROSES STABIL'
+      : 'PROSES TIDAK STABIL (' + oocCount + ' OOC)';
+    statusCard.append(sLabel, sValue);
+    el.appendChild(statusCard);
+
+    // The legacy summary table is unused now — keep the DOM but blank it.
+    const summary = document.getElementById('cc-summary-table');
+    if (summary) summary.innerHTML = '';
   }
 
-  function ccRenderSummary(plotData, ooc, type) {
-    const tbl = document.getElementById('cc-summary-table');
-    if (!tbl) return;
-    tbl.innerHTML = '';
-    const thead = document.createElement('thead');
-    const trh = document.createElement('tr');
-    const cols = type === 'imr'
-      ? ['#', 'Nilai', 'Status']
-      : ['Subgroup', 'X̄', 'R', 'Status'];
-    cols.forEach(c => { const th = document.createElement('th'); th.textContent = c; trh.appendChild(th); });
-    thead.appendChild(trh);
-    tbl.appendChild(thead);
-    const tbody = document.createElement('tbody');
-    plotData.forEach((v, i) => {
-      const tr = document.createElement('tr');
-      const isOOC = ooc[i]?.isOOC;
-      if (isOOC) tr.className = 'ooc-row';
-      const td1 = document.createElement('td'); td1.textContent = '#' + (i + 1);
-      const td2 = document.createElement('td'); td2.className = 'num'; td2.textContent = v.toFixed(3);
-      tr.append(td1, td2);
-      if (type !== 'imr') {
-        const td3 = document.createElement('td'); td3.className = 'num';
-        td3.textContent = (lastResult.plotRange?.[i] ?? 0).toFixed(3);
-        tr.append(td3);
-      }
-      const tdS = document.createElement('td');
-      tdS.className = isOOC ? 'status-ooc' : 'status-ok';
-      tdS.textContent = isOOC ? 'OOC' : 'OK';
-      tr.appendChild(tdS);
-      tbody.appendChild(tr);
-    });
-    tbl.appendChild(tbody);
-  }
-
-  /* ---------- core render ---------- */
+  /* ────────────────────────────────────────────────────────────
+     Render
+     ──────────────────────────────────────────────────────────── */
   function renderControlChart(rawData, options) {
     options = options || ccGetOptions();
     if (typeof Chart === 'undefined') {
       showToast('error', 'Chart.js gagal dimuat. Periksa koneksi internet.');
       return;
     }
-    if (!Array.isArray(rawData) || rawData.length < 8) {
-      showToast('error', 'Minimal 8 data poin diperlukan untuk Control Chart');
-      showEmptyState('controlchart');
-      return;
-    }
 
-    // Parse values, skip invalid
-    const values = [];
+    // Validate rows
     const errors = [];
-    rawData.forEach((d, i) => {
-      const raw = d.value;
-      let v = typeof raw === 'number' ? raw : nnum(raw);
-      if (isNaN(v)) { errors.push('Baris ' + (i + 1)); return; }
-      values.push(v);
-    });
-    if (errors.length > 0) {
-      showToast('warning', errors.length + ' baris tanpa angka valid dilewati');
-    }
-    if (values.length < 8) {
-      showToast('error', 'Butuh minimal 8 nilai numerik valid');
-      showEmptyState('controlchart');
-      return;
-    }
-
-    const sigma = Math.max(1, Math.min(4, options.sigmaMultiplier || 3));
-    const type  = options.type === 'xbar' ? 'xbar' : 'imr';
-
-    let stats, plotData, plotRange, ooc, oocR;
-
-    if (type === 'imr') {
-      const n = values.length;
-      const xBar = values.reduce((s, v) => s + v, 0) / n;
-      const MRs = values.slice(1).map((v, i) => Math.abs(v - values[i]));
-      const MRBar = MRs.length ? MRs.reduce((s, v) => s + v, 0) / MRs.length : 0;
-      const d2 = CC_CONSTANTS[2].d2;
-      const sigmaEst = MRBar / d2;
-      const UCL = xBar + sigma * sigmaEst;
-      const LCL = Math.max(0, xBar - sigma * sigmaEst);
-      const CL  = xBar;
-      ooc = values.map((v, i) => ({ index: i, value: v, isOOC: v > UCL || v < LCL }));
-      plotData = values;
-      stats = {
-        n, mean: xBar, stdDev: sigmaEst,
-        UCL, LCL, CL,
-        UCL_MR: CC_CONSTANTS[2].D4 * MRBar,
-        LCL_MR: 0,
-        CL_MR: MRBar,
-        oocCount: ooc.filter(p => p.isOOC).length,
-        MRs
-      };
-    } else {
-      const n = Math.max(2, Math.min(10, options.subgroupSize || 2));
-      const k = Math.floor(values.length / n);
-      if (k < 3) {
-        showToast('error', 'Butuh minimal ' + (3 * n) + ' data untuk X̄-R dengan n=' + n);
+    const valid = [];
+    (Array.isArray(rawData) ? rawData : []).forEach((r, i) => {
+      const nVal  = typeof r.n  === 'number' ? r.n  : parseInt(r.n,  10);
+      const npVal = typeof r.np === 'number' ? r.np : parseInt(r.np, 10);
+      if (isNaN(nVal)  || nVal  <= 0) { errors.push('Baris ' + (i + 1) + ': n harus > 0'); return; }
+      if (isNaN(npVal) || npVal <  0) { errors.push('Baris ' + (i + 1) + ': np harus ≥ 0'); return; }
+      if (npVal > nVal) {
+        errors.push('Baris ' + (i + 1) + ': Cacat (np) tidak boleh > Produksi (n)');
         return;
       }
-      const C = CC_CONSTANTS[n];
-      const subgroups = Array.from({ length: k }, (_, i) => values.slice(i * n, (i + 1) * n));
-      const xBars = subgroups.map(sg => sg.reduce((s, v) => s + v, 0) / sg.length);
-      const Rs    = subgroups.map(sg => Math.max(...sg) - Math.min(...sg));
-      const xBarBar = xBars.reduce((s, v) => s + v, 0) / k;
-      const RBar    = Rs.reduce((s, v) => s + v, 0) / k;
-      const UCL_x = xBarBar + C.A2 * RBar;
-      const LCL_x = Math.max(0, xBarBar - C.A2 * RBar);
-      const UCL_r = C.D4 * RBar;
-      const LCL_r = C.D3 * RBar;
-      ooc  = xBars.map((v, i) => ({ index: i, value: v, isOOC: v > UCL_x || v < LCL_x }));
-      oocR = Rs.map((v, i) => ({ index: i, value: v, isOOC: v > UCL_r || v < LCL_r }));
-      plotData  = xBars;
-      plotRange = Rs;
-      stats = {
-        n, k, mean: xBarBar, RBar,
-        sigmaEst: RBar / C.d2,
-        UCL_x, LCL_x, CL_x: xBarBar,
-        UCL_r, LCL_r, CL_r: RBar,
-        oocX: ooc.filter(p => p.isOOC).length,
-        oocR: oocR.filter(p => p.isOOC).length
-      };
+      valid.push({ period: r.period || '', n: nVal, np: npVal });
+    });
+
+    if (errors.length > 0) {
+      // Show first error verbatim, summarize the rest
+      showToast('error', errors.length === 1
+        ? errors[0]
+        : errors[0] + ' (+' + (errors.length - 1) + ' lainnya)');
     }
 
-    lastResult = { values, stats, plotData, plotRange, ooc, oocR, type, options };
+    if (valid.length < 5) {
+      showToast('error', 'Minimal 5 baris data valid untuk p-Chart');
+      showEmptyState('controlchart');
+      return;
+    }
 
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 2 — Destroy any prior chart. The secondary canvas is gone
-    // now that the chart is dual-axis; we still null the legacy ref so
-    // any external reader (export code, debug tools) sees a clean state.
-    // ──────────────────────────────────────────────────────────────────
+    const stats = calcPChart(valid);
+    if (!stats) {
+      showEmptyState('controlchart');
+      return;
+    }
+
+    // Y range — clamped to [0, 1] since p is a proportion
+    const pool = [...stats.UCLs, ...stats.LCLs, ...stats.ps, stats.pBar];
+    const pad  = (Math.max(...pool) - Math.min(...pool)) * 0.15;
+    const yMin = Math.max(0, Math.min(...pool) - pad);
+    const yMax = Math.min(1, Math.max(...pool) + pad);
+
+    // Destroy any prior chart; null the legacy MR reference too.
     if (window.ccChartInstance) { window.ccChartInstance.destroy(); window.ccChartInstance = null; }
     window.ccMRChartInstance = null;
 
     toggleEmpty('controlchart', false);
 
-    // Hard-coded hex palette so PNG export resolves to the same colors
-    // (CSS vars do not survive toBase64Image()).
-    const COLOR_XI       = '#3B82F6';   // Xi / X̄ line
-    const COLOR_OOC      = '#EF4444';   // out-of-control point fill
-    const COLOR_UCL_MAIN = '#EF4444';   // dashed UCL / LCL on yLeft
-    const COLOR_CL_MAIN  = '#10B981';   // solid CL on yLeft
-    const COLOR_MR       = '#8B5CF6';   // MR / R line + UCL_MR on yRight
-    const COLOR_MR_BAR   = '#A78BFA';   // CL (MR̄ / R̄) on yRight
-    const COLOR_GRID     = 'rgba(148,163,184,0.12)';
-    const COLOR_BG       = '#FAFAFA';
+    // Hard-coded colors so PNG export resolves cleanly.
+    const COLOR_P     = '#3B82F6';   // blue: pᵢ line + in-control points
+    const COLOR_OOC   = '#EF4444';   // red: OOC points + UCL/LCL lines
+    const COLOR_CL    = '#10B981';   // green: center line
+    const COLOR_ZONE  = 'rgba(59, 130, 246, 0.07)';  // faint blue between UCL/LCL
+    const COLOR_GRID  = 'rgba(148, 163, 184, 0.12)';
+    const COLOR_BG    = '#FAFAFA';
 
-    // Plugin: paint a near-white chart background so the colored lines
-    // read clearly inside the dark app shell, and PNG export carries it too.
     const bgPlugin = {
       id: 'lightBg',
       beforeDraw(chart) {
@@ -368,110 +342,59 @@
       }
     };
 
-    // Unify I-MR and X̄-R variable names. For I-MR the "secondary" is the
-    // Moving Range chart; for X̄-R it is the R chart — both render on yRight.
-    const isMR = type === 'imr';
-    const ucl  = isMR ? stats.UCL    : stats.UCL_x;
-    const cl   = isMR ? stats.CL     : stats.CL_x;
-    const lcl  = isMR ? stats.LCL    : stats.LCL_x;
-    const ucl2 = isMR ? stats.UCL_MR : stats.UCL_r;
-    const cl2  = isMR ? stats.CL_MR  : stats.CL_r;
-    const lcl2 = isMR ? 0            : stats.LCL_r;
-    const secondaryRaw   = isMR ? stats.MRs : plotRange;
-    const secondaryData  = isMR ? [null, ...stats.MRs] : plotRange;
-    const secondaryLabel = isMR ? 'MR' : 'R';
-    const secondaryTitle = isMR ? 'Moving Range' : 'Range';
-    const mainLabel      = isMR ? 'Xi (individual)' : 'X̄ subgroup';
-    const meanCaption    = isMR ? 'X̄' : 'X̄̄';
-    const mrBarCaption   = isMR ? 'MR̄' : 'R̄';
-    const n = plotData.length;
+    const n = valid.length;
+    const ptBg     = stats.ps.map((_, i) => stats.oocIdx[i] ? COLOR_OOC : COLOR_P);
+    const ptBorder = stats.ps.map((_, i) => stats.oocIdx[i] ? COLOR_OOC : COLOR_P);
+    const ptRad    = stats.ps.map((_, i) => stats.oocIdx[i] ? 8 : 5);
 
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 3 — Y-range calculations
-    // ──────────────────────────────────────────────────────────────────
-    const poolLeft = [ucl, lcl, cl, ...plotData];
-    const padLeft  = (Math.max(...poolLeft) - Math.min(...poolLeft)) * 0.15;
-    const yLeftMin = parseFloat((Math.min(...poolLeft) - padLeft).toFixed(3));
-    const yLeftMax = parseFloat((Math.max(...poolLeft) + padLeft).toFixed(3));
-
-    const secondaryVals = secondaryRaw.filter(v => v !== null && v !== undefined);
-    const poolRight = [ucl2, cl2, lcl2, ...secondaryVals];
-    const padRight  = Math.max(...poolRight) * 0.20;
-    const yRightMin = 0;
-    const yRightMax = parseFloat((Math.max(...poolRight) + padRight).toFixed(3));
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 4 — Point colors / radii. OOC = red, in-control = brand blue.
-    // For the secondary line (MR / R) we colour OOC points red too.
-    // ──────────────────────────────────────────────────────────────────
-    const ptColors = plotData.map(v =>
-      v > ucl || v < lcl ? COLOR_OOC : COLOR_XI);
-    const ptRadius = plotData.map(v =>
-      v > ucl || v < lcl ? 8 : 5);
-
-    const mrColors = secondaryData.map(v =>
-      v === null || v === undefined
-        ? 'transparent'
-        : (v > ucl2 || v < lcl2 ? COLOR_OOC : COLOR_MR));
-    const mrRadius = secondaryData.map(v =>
-      v === null || v === undefined ? 0 : 4);
-
-    const labels = plotData.map((_, i) => '#' + (i + 1));
-
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 4 — Seven datasets in ONE chart (yLeft = main, yRight = MR/R).
-    // Horizontal control lines are drawn as flat datasets — no annotation
-    // plugin dependency.
-    // ──────────────────────────────────────────────────────────────────
     const datasets = [
-      // yLeft — Individual / X̄
+      // pᵢ data line
       {
         type: 'line',
-        label: mainLabel,
-        data: plotData,
-        yAxisID: 'yLeft',
-        borderColor: COLOR_XI,
+        label: 'pᵢ (proporsi)',
+        data: stats.ps,
+        borderColor: COLOR_P,
         borderWidth: 2,
-        pointBackgroundColor: ptColors,
-        pointBorderColor: ptColors,
-        pointRadius: ptRadius,
+        pointBackgroundColor: ptBg,
+        pointBorderColor: ptBorder,
+        pointRadius: ptRad,
         pointHoverRadius: 9,
         pointStyle: 'circle',
         fill: false,
         tension: 0,
         order: 1
       },
+      // UCL (variable per point)
       {
         type: 'line',
-        label: 'UCL = ' + ucl.toFixed(3),
-        data: Array(n).fill(ucl),
-        yAxisID: 'yLeft',
-        borderColor: COLOR_UCL_MAIN,
+        label: 'UCL = ' + stats.UCL_avg.toFixed(4),
+        data: stats.UCLs,
+        borderColor: COLOR_OOC,
         borderWidth: 1.5,
-        borderDash: [7, 4],
+        borderDash: [6, 4],
         pointRadius: 0,
         fill: false,
         tension: 0,
         order: 3
       },
+      // CL (constant p̄)
       {
         type: 'line',
-        label: 'CL  ' + meanCaption + ' = ' + cl.toFixed(3),
-        data: Array(n).fill(cl),
-        yAxisID: 'yLeft',
-        borderColor: COLOR_CL_MAIN,
+        label: 'CL  p̄ = ' + stats.pBar.toFixed(4),
+        data: Array(n).fill(stats.pBar),
+        borderColor: COLOR_CL,
         borderWidth: 2,
         pointRadius: 0,
         fill: false,
         tension: 0,
         order: 3
       },
+      // LCL (variable per point)
       {
         type: 'line',
-        label: 'LCL = ' + lcl.toFixed(3),
-        data: Array(n).fill(lcl),
-        yAxisID: 'yLeft',
-        borderColor: COLOR_UCL_MAIN,
+        label: 'LCL = ' + stats.LCL_avg.toFixed(4),
+        data: stats.LCLs,
+        borderColor: COLOR_OOC,
         borderWidth: 1.5,
         borderDash: [3, 3],
         pointRadius: 0,
@@ -479,194 +402,162 @@
         tension: 0,
         order: 3
       },
-
-      // yRight — Moving Range / Range
+      // Shaded zone between UCL (this dataset) and LCL (previous dataset).
+      // fill: '-1' targets the immediately preceding dataset, which is LCL.
       {
         type: 'line',
-        label: secondaryLabel,
-        data: secondaryData,
-        yAxisID: 'yRight',
-        borderColor: COLOR_MR,
-        borderWidth: 1.5,
-        borderDash: [5, 3],
-        pointBackgroundColor: mrColors,
-        pointBorderColor: mrColors,
-        pointRadius: mrRadius,
-        pointStyle: 'triangle',
-        fill: false,
-        tension: 0,
-        spanGaps: false,
-        order: 2
-      },
-      {
-        type: 'line',
-        label: 'UCL_' + secondaryLabel + ' = ' + ucl2.toFixed(3),
-        data: Array(n).fill(ucl2),
-        yAxisID: 'yRight',
-        borderColor: COLOR_MR,
-        borderWidth: 1,
-        borderDash: [6, 4],
+        label: '',
+        data: stats.UCLs,
+        borderColor: 'rgba(0,0,0,0)',
+        borderWidth: 0,
         pointRadius: 0,
-        fill: false,
-        tension: 0,
-        order: 4
-      },
-      {
-        type: 'line',
-        label: mrBarCaption + ' = ' + cl2.toFixed(3),
-        data: Array(n).fill(cl2),
-        yAxisID: 'yRight',
-        borderColor: COLOR_MR_BAR,
-        borderWidth: 1,
-        pointRadius: 0,
-        fill: false,
+        backgroundColor: COLOR_ZONE,
+        fill: '-1',
         tension: 0,
         order: 4
       }
     ];
 
-    // For X̄-R, expose an LCL_R line too (relevant when subgroup size ≥ 7).
-    if (!isMR && lcl2 > 0) {
-      datasets.push({
-        type: 'line',
-        label: 'LCL_R = ' + lcl2.toFixed(3),
-        data: Array(n).fill(lcl2),
-        yAxisID: 'yRight',
-        borderColor: COLOR_MR,
-        borderWidth: 1,
-        borderDash: [2, 4],
-        pointRadius: 0,
-        fill: false,
-        tension: 0,
-        order: 4
-      });
-    }
+    const canvas = document.getElementById('cc-chart-canvas');
+    if (!canvas) return;
 
-    // ──────────────────────────────────────────────────────────────────
-    // STEP 5 — Chart options (single chart, dual y-axis).
-    // ──────────────────────────────────────────────────────────────────
-    const chartOptions = {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      animation: { duration: 400 },
-      layout: { padding: { top: 8, right: 12, bottom: 4, left: 8 } },
-      plugins: {
-        title: {
-          display: !!options.title,
-          text: options.title || '',
-          color: '#222222',
-          font: { family: 'system-ui, sans-serif', size: 15, weight: '700' },
-          padding: { top: 4, bottom: 12 }
-        },
-        legend: {
-          display: true,
-          position: 'top',
-          labels: {
-            usePointStyle: true,
-            pointStyleWidth: 16,
-            color: '#444444',
-            font: { size: 11, family: 'system-ui, sans-serif' },
-            padding: 14
-          }
-        },
-        tooltip: {
-          mode: 'index',
-          intersect: false,
-          backgroundColor: '#ffffff',
-          borderColor: '#dddddd',
-          borderWidth: 1,
-          titleColor: '#222222',
-          bodyColor:  '#555555',
-          padding: 10,
-          callbacks: {
-            afterBody(items) {
-              const v = plotData[items[0].dataIndex];
-              if (v === undefined) return [];
-              const isOOC = v > ucl || v < lcl;
-              return isOOC ? ['⚠ OUT OF CONTROL'] : ['✓ In Control'];
+    window.ccChartInstance = new Chart(canvas.getContext('2d'), {
+      plugins: [bgPlugin],
+      data: { labels: stats.labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        animation: { duration: 400 },
+        layout: { padding: { top: 8, right: 12, bottom: 4, left: 8 } },
+        plugins: {
+          title: {
+            display: !!options.title,
+            text: options.title || '',
+            color: '#222222',
+            font: { family: 'system-ui, sans-serif', size: 15, weight: '700' },
+            padding: { top: 4, bottom: 12 }
+          },
+          legend: {
+            position: 'top',
+            labels: {
+              usePointStyle: true,
+              pointStyleWidth: 16,
+              color: '#444444',
+              font: { size: 11, family: 'system-ui, sans-serif' },
+              padding: 14,
+              filter: (item) => item.text && item.text.trim() !== ''
+            }
+          },
+          tooltip: {
+            mode: 'index',
+            intersect: false,
+            backgroundColor: '#ffffff',
+            borderColor: '#dddddd',
+            borderWidth: 1,
+            titleColor: '#222222',
+            bodyColor: '#555555',
+            padding: 10,
+            callbacks: {
+              label: (item) => {
+                // Hide the shaded fill dataset and the constant-CL dataset
+                if (!item.dataset.label || item.dataset.label === '') return null;
+                if (item.datasetIndex === 0) {
+                  return ' p = ' + (item.raw * 100).toFixed(2) + '%';
+                }
+                return ' ' + item.dataset.label + ' = ' + (item.raw * 100).toFixed(2) + '%';
+              },
+              afterBody: (items) => {
+                if (!items || items.length === 0) return [];
+                const i = items[0].dataIndex;
+                const row = valid[i];
+                const isOOC = stats.oocIdx[i];
+                return [
+                  'n = ' + row.n + ', np = ' + row.np,
+                  isOOC ? '⚠ OUT OF CONTROL' : '✓ In Control'
+                ];
+              }
             }
           }
-        }
-      },
-      scales: {
-        x: {
-          grid: { color: 'rgba(148,163,184,0.10)' },
-          border: { color: '#dddddd' },
-          ticks: { color: '#555555', font: { size: 11, family: 'system-ui, sans-serif' } },
-          title: { display: true, text: 'Pengamatan ke-',
-                   color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
         },
-        yLeft: {
-          type: 'linear',
-          position: 'left',
-          min: yLeftMin,
-          max: yLeftMax,
-          grid: { color: COLOR_GRID },
-          border: { color: '#dddddd' },
-          ticks: { color: '#555555',
-                   font: { size: 11, family: 'monospace' } },
-          title: { display: true,
-                   text: options.unitLabel || (isMR ? 'Nilai (Xi)' : 'X̄'),
-                   color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
-        },
-        yRight: {
-          type: 'linear',
-          position: 'right',
-          min: yRightMin,
-          max: yRightMax,
-          // ↓ critical: prevents a second y-grid being drawn over the chart area
-          grid: { drawOnChartArea: false },
-          border: { color: '#dddddd' },
-          ticks: { color: '#555555',
-                   font: { size: 11, family: 'monospace' } },
-          title: { display: true, text: secondaryTitle,
-                   color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
+        scales: {
+          x: {
+            grid:   { color: 'rgba(148,163,184,0.10)' },
+            border: { color: '#dddddd' },
+            ticks:  { color: '#555555', font: { size: 11, family: 'system-ui, sans-serif' } },
+            title:  { display: true, text: 'Periode',
+                      color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
+          },
+          y: {
+            min: parseFloat(yMin.toFixed(4)),
+            max: parseFloat(yMax.toFixed(4)),
+            grid:   { color: COLOR_GRID },
+            border: { color: '#dddddd' },
+            ticks:  {
+              color: '#555555',
+              font: { family: 'monospace', size: 11 },
+              callback: (val) => (val * 100).toFixed(2) + '%'
+            },
+            title:  { display: true,
+                      text: options.labelY || 'Proporsi Cacat (p)',
+                      color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
+          }
         }
       }
+    });
+
+    // Cache for export + tooltip
+    lastResult = { rows: valid, stats, options };
+    AppState.controlChart.stats = {
+      pBar: stats.pBar, UCL_avg: stats.UCL_avg, LCL_avg: stats.LCL_avg,
+      totalN: stats.totalN, totalNP: stats.totalNP,
+      oocCount: stats.oocIdx.filter(Boolean).length
     };
 
-    const mainCanvas = document.getElementById('cc-chart-canvas');
-    if (mainCanvas) {
-      window.ccChartInstance = new Chart(mainCanvas.getContext('2d'), {
-        plugins: [bgPlugin],
-        data: { labels, datasets },
-        options: chartOptions
-      });
-    }
-
-    ccRenderStats(stats, options, type);
-    ccRenderSummary(plotData, ooc, type);
+    ccRenderStats(stats);
   }
   window.renderControlChart = renderControlChart;
 
-  /* ---------- import / paste ---------- */
-  function ccParseValues(rawText) {
-    // Accept 1-column or 2-column data; pick the rightmost numeric column.
+  /* ────────────────────────────────────────────────────────────
+     CSV import / paste / export
+     CSV format: Periode,n,np   (header optional, auto-detected)
+     ──────────────────────────────────────────────────────────── */
+  function ccParseCSV(rawText) {
+    if (typeof rawText !== 'string' || !rawText.trim()) return [];
     const text = (rawText.charCodeAt(0) === 0xFEFF ? rawText.slice(1) : rawText)
                   .replace(/\r\n/g, '\n').replace(/\r/g, '\n');
     const lines = text.split('\n').map(l => l.trim()).filter(l => l !== '');
     if (lines.length === 0) return [];
-    // Determine delimiter from first line
+
     const first = lines[0];
     const delim = first.includes('\t') ? '\t'
                 : first.includes(';')  ? ';'
                 : first.includes(',')  ? ',' : null;
+    const splitClean = (line) => (delim ? line.split(delim) : [line])
+      .map(p => p.trim().replace(/^"|"$/g, ''));
+
+    // Header detection: row 0 last two cells non-numeric AND row 1 last two cells numeric
+    let startAt = 0;
+    if (lines.length >= 2) {
+      const a = splitClean(lines[0]);
+      const b = splitClean(lines[1]);
+      const isNum = (s) => !isNaN(parseInt(s, 10));
+      const aHasNum = a.length >= 3 && (isNum(a[1]) && isNum(a[2]));
+      const bHasNum = b.length >= 3 && (isNum(b[1]) && isNum(b[2]));
+      if (!aHasNum && bHasNum) startAt = 1;
+    }
 
     const out = [];
-    lines.forEach((line, lineIdx) => {
-      const parts = delim ? line.split(delim) : [line];
-      // pick last numeric token
-      let v = NaN;
-      for (let i = parts.length - 1; i >= 0; i--) {
-        const t = parts[i].trim().replace(/^"|"$/g, '');
-        const n = nnum(t);
-        if (!isNaN(n)) { v = n; break; }
-      }
-      // skip header on line 0 if not numeric
-      if (lineIdx === 0 && isNaN(v)) return;
-      if (!isNaN(v)) out.push({ id: generateId(), value: v });
-    });
+    for (let i = startAt; i < lines.length; i++) {
+      const cols = splitClean(lines[i]);
+      if (cols.length < 3) continue;
+      const period = sanitizeText(cols[0]).slice(0, 30);
+      const n  = parseInt(cols[1], 10);
+      const np = parseInt(cols[2], 10);
+      if (isNaN(n) || isNaN(np)) continue;
+      if (n <= 0 || np < 0 || np > n) continue;
+      out.push({ id: generateId(), period, n, np });
+    }
     return out;
   }
 
@@ -674,16 +565,16 @@
     if (!file) return;
     if (file.size > 1024 * 1024) { showToast('error', 'File terlalu besar (max 1MB)'); return; }
     const reader = new FileReader();
-    reader.onload = e => {
-      const rows = ccParseValues(String(e.target.result || ''));
-      if (rows.length < 8) {
-        showToast('error', 'CSV harus berisi minimal 8 nilai numerik');
+    reader.onload = (e) => {
+      const rows = ccParseCSV(String(e.target.result || ''));
+      if (rows.length < 5) {
+        showToast('error', 'CSV harus berisi minimal 5 baris (periode, n, np) yang valid');
         return;
       }
       AppState.controlChart.rows = rows;
       ccPopulateTable(rows.slice());
       saveState();
-      showToast('success', rows.length + ' nilai berhasil diimport');
+      showToast('success', rows.length + ' baris berhasil diimport');
       renderControlChart(rows, ccGetOptions());
     };
     reader.onerror = () => showToast('error', 'Gagal membaca file');
@@ -696,76 +587,79 @@
       return;
     }
     navigator.clipboard.readText().then(text => {
-      const rows = ccParseValues(text);
-      if (rows.length < 8) {
-        showToast('error', 'Clipboard harus berisi minimal 8 nilai numerik');
+      const rows = ccParseCSV(text);
+      if (rows.length < 5) {
+        showToast('error', 'Clipboard harus berisi minimal 5 baris (periode, n, np)');
         return;
       }
       AppState.controlChart.rows = rows;
       ccPopulateTable(rows.slice());
       saveState();
-      showToast('success', rows.length + ' nilai dari clipboard');
+      showToast('success', rows.length + ' baris dari clipboard');
       renderControlChart(rows, ccGetOptions());
     }).catch(() => showToast('warning', 'Akses clipboard ditolak'));
   }
 
-  /* ---------- exports ---------- */
+  /* ────────────────────────────────────────────────────────────
+     Exports
+     ──────────────────────────────────────────────────────────── */
   function ccExportPNG() {
     if (!window.ccChartInstance) { showToast('error', 'Render chart dulu'); return; }
-    triggerDownload(window.ccChartInstance.toBase64Image('image/png'), 'control-chart.png');
+    triggerDownload(window.ccChartInstance.toBase64Image('image/png'), 'p-chart.png');
   }
 
   function ccExportCSV() {
     if (!lastResult) { showToast('error', 'Render chart dulu'); return; }
     const BOM = '﻿';
-    let csv = '';
-    if (lastResult.type === 'imr') {
-      csv = BOM + 'No,Nilai,Status,MR\n';
-      lastResult.values.forEach((v, i) => {
-        const status = lastResult.ooc[i].isOOC ? 'OOC' : 'OK';
-        const mr = i === 0 ? '' : lastResult.stats.MRs[i - 1].toFixed(4);
-        csv += (i + 1) + ',' + v + ',' + status + ',' + mr + '\n';
-      });
-    } else {
-      csv = BOM + 'Subgroup,X-bar,R,Status X,Status R\n';
-      lastResult.plotData.forEach((v, i) => {
-        const sx = lastResult.ooc[i].isOOC ? 'OOC' : 'OK';
-        const sr = lastResult.oocR[i].isOOC ? 'OOC' : 'OK';
-        csv += (i + 1) + ',' + v.toFixed(4) + ',' + lastResult.plotRange[i].toFixed(4) + ',' + sx + ',' + sr + '\n';
-      });
-    }
+    const escape = (s) => /[,"\n]/.test(String(s))
+      ? '"' + String(s).replace(/"/g, '""') + '"' : String(s);
+
+    let csv = BOM + 'Periode,n,np,p,UCL,LCL,Status\n';
+    const { rows, stats } = lastResult;
+    rows.forEach((r, i) => {
+      const p   = stats.ps[i];
+      const ucl = stats.UCLs[i];
+      const lcl = stats.LCLs[i];
+      const status = stats.oocIdx[i] ? 'OOC' : 'Dalam Kendali';
+      csv += escape(r.period) + ',' + r.n + ',' + r.np + ',' +
+             p.toFixed(4) + ',' + ucl.toFixed(4) + ',' + lcl.toFixed(4) + ',' + status + '\n';
+    });
+    csv += ',,Rata-rata,' + stats.pBar.toFixed(4) + ',' +
+           stats.UCL_avg.toFixed(4) + ',' + stats.LCL_avg.toFixed(4) + ',\n';
+
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    triggerDownload(URL.createObjectURL(blob), 'control-chart-data.csv');
+    triggerDownload(URL.createObjectURL(blob), 'p-chart-data.csv');
   }
 
-  /* ---------- reset ---------- */
+  /* ────────────────────────────────────────────────────────────
+     Reset
+     ──────────────────────────────────────────────────────────── */
   function ccReset() {
-    showModal('Hapus semua data Control Chart?', () => {
+    showModal('Hapus semua data p-Chart?', () => {
       if (window.ccChartInstance) { window.ccChartInstance.destroy(); window.ccChartInstance = null; }
       window.ccMRChartInstance = null;
-      AppState.controlChart.title = '';
-      AppState.controlChart.type = 'imr';
-      AppState.controlChart.sigma = 3;
-      AppState.controlChart.subgroupSize = 2;
-      AppState.controlChart.unit = '';
-      AppState.controlChart.rows = [];
+      AppState.controlChart.title  = '';
+      AppState.controlChart.labelY = '';
+      AppState.controlChart.rows   = [];
+      AppState.controlChart.stats  = {};
       saveState();
       ccSyncUI();
       showEmptyState('controlchart');
-      showToast('success', 'Control Chart direset');
+      showToast('success', 'p-Chart direset');
     });
   }
 
-  /* ---------- init ---------- */
+  /* ────────────────────────────────────────────────────────────
+     Init
+     ──────────────────────────────────────────────────────────── */
   function initControlChart() {
-    // Attach button listeners
     document.getElementById('btn-cc-add-row')?.addEventListener('click', () => ccAddRow(true));
     document.getElementById('btn-cc-render')?.addEventListener('click', () => {
       ccSyncStateFromUI();
       saveState();
       renderControlChart(AppState.controlChart.rows.slice(), ccGetOptions());
     });
-    document.getElementById('btn-cc-import-csv')?.addEventListener('change', e => {
+    document.getElementById('btn-cc-import-csv')?.addEventListener('change', (e) => {
       const f = e.target.files?.[0];
       if (f) ccImportCSV(f);
       e.target.value = '';
@@ -775,18 +669,21 @@
     document.getElementById('btn-cc-export-csv')?.addEventListener('click', ccExportCSV);
     document.getElementById('btn-cc-reset')?.addEventListener('click', ccReset);
 
-    const typeSel = document.getElementById('cc-type');
-    typeSel?.addEventListener('change', () => {
-      const sgEl = document.getElementById('cc-subgroup-size');
-      if (sgEl) sgEl.disabled = (typeSel.value !== 'xbar');
-      ccSyncStateFromUI();
-      saveState();
-    });
-    ['cc-title','cc-sigma','cc-subgroup-size','cc-unit'].forEach(id => {
-      document.getElementById(id)?.addEventListener('blur', () => { ccSyncStateFromUI(); saveState(); });
+    ['cc-title', 'cc-label-y'].forEach(id => {
+      document.getElementById(id)?.addEventListener('blur', () => {
+        ccSyncStateFromUI();
+        saveState();
+      });
     });
 
-    // Initial UI sync from state (also seeds empty rows if needed)
+    document.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.key === 'Enter' && AppState.activeTab === 'controlchart') {
+        e.preventDefault();
+        ccSyncStateFromUI();
+        renderControlChart(AppState.controlChart.rows.slice(), ccGetOptions());
+      }
+    });
+
     ccSyncUI();
   }
   window.initControlChart = initControlChart;

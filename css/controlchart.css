@@ -1,28 +1,11 @@
 /* ============================================================
-   controlchart.css — Control Chart tool styles
+   controlchart.css — p-Chart tool styles
    ============================================================ */
 
-/* --- Added: Force ALL text in the panel to be white --- */
+/* Force panel text to be white (legacy panel-wide override) */
 #panel-controlchart,
 #panel-controlchart * {
   color: #ffffff !important;
-}
-/* ------------------------------------------------------ */
-
-/* FIX 1 — keep Tipe+Sigma and Subgroup+Unit flush on desktop.
-   Without min-width:0 the second flex <input> refuses to shrink
-   and overflows the panel. Mobile stacking lives in main.css. */
-#panel-controlchart .field-row { gap: 12px; align-items: flex-end; }
-#panel-controlchart .field-row > .field-group { flex: 1 1 0; min-width: 0; }
-/* Sigma + Subgroup-size are short numeric fields — cap them so the
-   text inputs (Unit) get the remaining space. */
-#panel-controlchart .field-row > .field-group:has(input[type="number"]) { flex: 0 0 96px; }
-#panel-controlchart .field-row > .field-group > input,
-#panel-controlchart .field-row > .field-group > select { width: 100%; min-width: 0; }
-#panel-controlchart .input-panel { overflow: visible; }
-@media (max-width: 480px) {
-  #panel-controlchart .field-row { flex-direction: column; }
-  #panel-controlchart .field-row > .field-group { flex: unset; width: 100%; }
 }
 
 .cc-table-wrapper {
@@ -47,8 +30,12 @@
   background: var(--bg-secondary);
 }
 .cc-input-table td { padding: 0.3rem 0.4rem; }
-.cc-input-table td.idx { font-family: var(--font-mono); width: 32px; }
-.cc-input-table input { width: 100%; padding: 6px 8px; text-align: right; font-family: var(--font-mono); }
+.cc-input-table td.idx { font-family: var(--font-mono); width: 32px; opacity: 0.6; }
+.cc-input-table input { width: 100%; padding: 6px 8px; font-family: var(--font-mono); }
+/* Periode column is left-aligned text; n / np are right-aligned numerics */
+.cc-input-table input.cc-period-input { text-align: left; font-family: var(--font-body); }
+.cc-input-table input.cc-n-input,
+.cc-input-table input.cc-np-input { text-align: right; }
 .cc-input-table input.invalid { border-color: var(--accent-red) !important; }
 .cc-input-table .btn-remove-row {
   background: transparent;
@@ -60,8 +47,6 @@
 .cc-input-table .btn-remove-row:hover { color: var(--accent-red) !important; }
 
 .cc-chart-area { display: flex; flex-direction: column; gap: 0.75rem; padding: 1rem; }
-/* Chart canvases render greyscale on a near-white background — set the
-   wrapper bg to match so antialiased edges blend cleanly. */
 .cc-canvas-wrapper {
   position: relative;
   width: 100%;
@@ -72,9 +57,7 @@
   overflow: hidden;
 }
 .cc-canvas-wrapper canvas { width: 100% !important; height: 100% !important; }
-.cc-mr-wrapper { height: 200px; }
 #cc-chart-canvas { min-height: 460px; }
-#cc-mr-canvas { min-height: 200px; }
 @media (max-width: 768px) {
   .cc-canvas-wrapper { height: 320px; }
   #cc-chart-canvas { min-height: 300px; }
@@ -100,29 +83,33 @@
   padding: 0 1rem 1rem;
 }
 
-.cc-status-badge {
-  display: inline-block;
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--radius-sm);
+/* Status badge as a full-width stat card. Stable = green, Unstable = red. */
+.cc-status-card .stat-label {
   font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  opacity: 0.85;
+}
+.cc-status-card .stat-value {
+  font-size: var(--text-base) !important;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
 }
-.cc-status-badge.stable   { background: var(--accent-green); color: #fff !important; }
-.cc-status-badge.unstable { background: var(--accent-red);   color: #fff !important; }
+.cc-status-card.stable {
+  background: var(--accent-green) !important;
+  border-color: var(--accent-green) !important;
+}
+.cc-status-card.unstable {
+  background: var(--accent-red) !important;
+  border-color: var(--accent-red) !important;
+}
+.cc-status-card.stable .stat-label,
+.cc-status-card.stable .stat-value,
+.cc-status-card.unstable .stat-label,
+.cc-status-card.unstable .stat-value {
+  color: #ffffff !important;
+}
 
-.cc-summary-wrapper { padding: 0 1rem 1rem; overflow-x: auto; }
-#cc-summary-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
-#cc-summary-table th, #cc-summary-table td {
-  padding: 0.45rem 0.7rem;
-  border-bottom: 1px solid var(--border-base);
-  text-align: left;
-}
-#cc-summary-table th {
-  font-size: var(--text-xs);
-  text-transform: uppercase;
-}
-#cc-summary-table td.num { text-align: right; font-family: var(--font-mono); }
-#cc-summary-table tr.ooc-row { background: rgba(239, 68, 68, 0.12); }
-#cc-summary-table td.status-ooc { color: var(--accent-red) !important; font-weight: 600; }
+/* Legacy summary table — kept as an empty placeholder so the engine's
+   innerHTML='' clear doesn't error. Hidden visually. */
+.cc-summary-wrapper { display: none; }
