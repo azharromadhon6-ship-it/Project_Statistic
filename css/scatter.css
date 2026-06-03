@@ -81,3 +81,17 @@
   text-transform: uppercase;
 }
 #sc-summary-table td.num { text-align: right; font-family: var(--font-mono); }
+
+/* ─── FIX 5: equation cards span the full stats grid row ─── */
+#scatter-eq-yx,
+#scatter-eq-xy {
+  grid-column: 1 / -1;
+  border-left: 3px solid var(--brand-light);
+}
+#scatter-eq-yx .eq-value,
+#scatter-eq-xy .eq-value {
+  font-family: var(--font-mono);
+  font-size: 15px !important;
+  letter-spacing: 0.03em;
+  color: var(--brand-light);
+}

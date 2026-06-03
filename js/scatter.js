@@ -218,20 +218,30 @@
       return c;
     };
     const rCls = Math.abs(stats.r) >= 0.7 ? 'vital' : (Math.abs(stats.r) >= 0.5 ? '' : 'trivial');
+    const MINUS = '−';   // proper minus sign — not the hyphen-minus
+    const fmtSignedAbs = (v) => v >= 0 ? v.toFixed(3) : MINUS + Math.abs(v).toFixed(3);
+
+    // 1. N
     el.appendChild(mkCard('n (Pasang Data)', String(stats.n)));
 
-    // Pearson r — gets the spec'd DOM id so external code can target it.
+    // 2. x̄
+    el.appendChild(mkCard('x̄ (Mean X)', stats.Xbar.toFixed(3)));
+
+    // 3. ȳ
+    el.appendChild(mkCard('ȳ (Mean Y)', stats.Ybar.toFixed(3)));
+
+    // 4. Pearson r
     const rCard = mkCard('Pearson r', stats.r.toFixed(3), interpretR(stats.r), rCls);
     rCard.id = 'scatter-stat-r';
     el.appendChild(rCard);
 
-    // R² — shown as percentage (Variasi Y yang dijelaskan X).
+    // 5. R² — shown as percentage with the raw decimal as sub-text
     const r2Pct = (stats.r2 * 100).toFixed(1) + '%';
     const r2Card = mkCard('R² (Determinasi)', r2Pct, stats.r2.toFixed(4) + ' — variasi Y yang dijelaskan X');
     r2Card.id = 'scatter-stat-r2';
     el.appendChild(r2Card);
 
-    // Interpretasi — colored value text per spec thresholds.
+    // 6. Interpretasi — color-coded per FIX 2 thresholds
     const absR = Math.abs(stats.r);
     let interpText, interpColor;
     if (absR >= 0.8)      { interpText = 'Korelasi Kuat';   interpColor = '#10B981'; }
@@ -242,13 +252,34 @@
     interpCard.querySelector('.stat-value').style.color = interpColor;
     el.appendChild(interpCard);
 
-    const sign = stats.beta1 >= 0 ? '+' : '';
-    el.appendChild(mkCard('Persamaan Regresi',
-      'Ŷ = ' + stats.beta0.toFixed(3) + sign + stats.beta1.toFixed(3) + 'X',
-      'Slope = ' + stats.beta1.toFixed(4) + ' | Intercept = ' + stats.beta0.toFixed(4)));
-    el.appendChild(mkCard('P-value (approx)',
-      stats.pValue <= 0.001 ? '< 0.001' : '≈ ' + stats.pValue,
-      stats.pValue < 0.05 ? 'Korelasi Signifikan (α=0.05)' : 'Tidak Signifikan'));
+    // 7. Persamaan Regresi Y pada X (full width via #scatter-eq-yx CSS rule)
+    const signBYX = stats.beta1 >= 0 ? '+' : MINUS;
+    const absBYX  = Math.abs(stats.beta1).toFixed(3);
+    const fmtAYX  = fmtSignedAbs(stats.beta0);
+    const eqYxCard = mkCard('Persamaan Regresi Y pada X',
+      'Ŷ = ' + fmtAYX + ' ' + signBYX + ' ' + absBYX + 'X',
+      'Slope = ' + stats.beta1.toFixed(4) + ' | Intercept = ' + stats.beta0.toFixed(4));
+    eqYxCard.id = 'scatter-eq-yx';
+    const eqYxVal = eqYxCard.querySelector('.stat-value');
+    eqYxVal.id = 'scatter-eq-yx-val';
+    eqYxVal.classList.add('eq-value');
+    el.appendChild(eqYxCard);
+
+    // 8. Persamaan Regresi X pada Y (always rendered; line on chart is
+    //    conditional on the checkbox but the equation card always shows)
+    if (stats.b_xy !== undefined && stats.a_xy !== undefined) {
+      const signBXY = stats.b_xy >= 0 ? '+' : MINUS;
+      const absBXY  = Math.abs(stats.b_xy).toFixed(3);
+      const fmtAXY  = fmtSignedAbs(stats.a_xy);
+      const eqXyCard = mkCard('Persamaan Regresi X pada Y',
+        'X̂ = ' + fmtAXY + ' ' + signBXY + ' ' + absBXY + 'Y',
+        'Slope = ' + stats.b_xy.toFixed(4) + ' | Intercept = ' + stats.a_xy.toFixed(4));
+      eqXyCard.id = 'scatter-eq-xy';
+      const eqXyVal = eqXyCard.querySelector('.stat-value');
+      eqXyVal.id = 'scatter-eq-xy-val';
+      eqXyVal.classList.add('eq-value');
+      el.appendChild(eqXyCard);
+    }
   }
 
   function scRenderSummary(pairs, predict, sigmaHat) {
@@ -401,7 +432,7 @@
     // FASE 6 — build datasets
     const datasets = [{
       type: 'scatter',
-      label: options.xLabel + ' vs ' + options.yLabel,
+      label: 'Data (X, Y)',
       data: pairs.map(p => ({ x: p.x, y: p.y, label: p.label })),
       backgroundColor: ptColors,
       borderColor: ptColors,
@@ -411,10 +442,9 @@
     }];
 
     if (options.showRegression) {
-      const sign = beta1 >= 0 ? '+' : '';
       datasets.push({
         type: 'line',
-        label: 'Regresi: Ŷ=' + beta0.toFixed(3) + sign + beta1.toFixed(3) + 'X',
+        label: 'Regresi Y pada X',
         data: regLinePoints,
         borderColor: getCSSVar('--accent-red'),
         borderWidth: 2,
@@ -466,10 +496,9 @@
         { x: xMin, y: (xMin - a_xy) / b_xy },
         { x: xMax, y: (xMax - a_xy) / b_xy }
       ];
-      const signXY = (1 / b_xy) >= 0 ? '+' : '';
       datasets.push({
         type: 'line',
-        label: 'Regresi X pada Y: Ŷ=' + (-a_xy / b_xy).toFixed(3) + signXY + (1 / b_xy).toFixed(3) + 'X',
+        label: 'Regresi X pada Y',
         data: lineXonY,
         borderColor: '#F59E0B',
         borderWidth: 2,
@@ -593,7 +622,7 @@
       }
     });
 
-    const stats = { n, Xbar, Ybar, Sxx, Syy, Sxy, r, r2, beta0, beta1, sigmaHat, tStat, pValue };
+    const stats = { n, Xbar, Ybar, Sxx, Syy, Sxy, r, r2, beta0, beta1, b_xy, a_xy, sigmaHat, tStat, pValue };
     lastResult = { pairs, stats, predict, sigmaHat, options };
     scRenderStats(stats);
     scRenderSummary(pairs, predict, sigmaHat);
