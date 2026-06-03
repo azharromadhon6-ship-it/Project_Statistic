@@ -159,6 +159,23 @@
     if (typeof ChartDataLabels !== 'undefined') Chart.register(ChartDataLabels);
 
     const ctx = ctxEl.getContext('2d');
+
+    // White canvas background — copied verbatim from histogram.js / controlchart.js
+    // (POLA A: local plugin object passed via plugins: [bgPlugin]).
+    // beforeDraw paints #FAFAFA into the canvas before Chart.js draws,
+    // so PNG export via toBase64Image() carries the light background too.
+    const COLOR_BG = '#FAFAFA';
+    const bgPlugin = {
+      id: 'lightBg',
+      beforeDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      }
+    };
+
     const annotations = {};
     if (typeof annotationPlugin !== 'undefined') {
       annotations.thresholdLine = {
@@ -177,6 +194,7 @@
     }
 
     window.paretoChartInstance = new Chart(ctx, {
+      plugins: [bgPlugin],
       type: 'bar',
       data: {
         labels: enriched.map(d => d.category),
@@ -220,7 +238,7 @@
         },
         plugins: {
           title: { display: !!options.title, text: options.title || '',
-                   color: getCSSVar('--text-primary'), font: { family: getCSSVar('--font-heading'), size: 16 } },
+                   color: '#000000', font: { family: getCSSVar('--font-heading'), size: 16 } },
           legend: { labels: { color: getCSSVar('--text-secondary'), font: { family: getCSSVar('--font-body'), size: 12 } } },
           tooltip: {
             backgroundColor: getCSSVar('--bg-secondary'), borderColor: getCSSVar('--border-base'),
