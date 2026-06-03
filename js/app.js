@@ -35,8 +35,8 @@ const AppState = {
     rows: []                 // { id, value }
   },
   histogram: {
-    title: '', binMethod: 'sturges', binCount: 10,
-    lsl: null, usl: null, showNormal: false, unit: '',
+    title: '', binMethod: 'sturges',
+    showNormal: false, unit: '', labelY: '',
     // freqTypes: array of { id, label } defining the freq columns.
     // rows[].freqs is keyed by the type id, e.g. { sqt_abc: 12, sqt_def: 5 }.
     freqTypes: [],
@@ -312,15 +312,13 @@ function clearState() {
   AppState.controlChart.subgroupSize = 2;
   AppState.controlChart.unit   = '';
   AppState.controlChart.rows   = [];
-  AppState.histogram.title     = '';
-  AppState.histogram.binMethod = 'sturges';
-  AppState.histogram.binCount  = 10;
-  AppState.histogram.lsl       = null;
-  AppState.histogram.usl       = null;
-  AppState.histogram.showNormal= false;
-  AppState.histogram.unit      = '';
-  AppState.histogram.freqTypes = [];
-  AppState.histogram.rows      = [];
+  AppState.histogram.title      = '';
+  AppState.histogram.binMethod  = 'sturges';
+  AppState.histogram.showNormal = false;
+  AppState.histogram.unit       = '';
+  AppState.histogram.labelY     = '';
+  AppState.histogram.freqTypes  = [];
+  AppState.histogram.rows       = [];
   AppState.fishbone.effect     = '';
   AppState.fishbone.categories = makeDefaultFishboneCategories();
   AppState.scatter.title          = '';
@@ -424,11 +422,11 @@ function restoreState() {
     if (p.histogram) {
       const h = p.histogram;
       if (!Array.isArray(h.rows)) h.rows = [];
-      if (!['sturges','fd','manual'].includes(h.binMethod)) h.binMethod = 'sturges';
-      h.binCount = Math.max(1, Math.min(50, typeof h.binCount === 'number' ? h.binCount : 10));
-      if (typeof h.lsl !== 'number') h.lsl = null;
-      if (typeof h.usl !== 'number') h.usl = null;
+      if (!['sturges','fd'].includes(h.binMethod)) h.binMethod = 'sturges';
       h.showNormal = !!h.showNormal;
+      if (typeof h.labelY !== 'string') h.labelY = '';
+      // Strip retired fields so old saved sessions don't leak them back into AppState
+      delete h.binCount; delete h.lsl; delete h.usl;
       // Value may be string OR number (categorical bar chart upgrade).
       h.rows = h.rows.filter(r => r && typeof r.id === 'string' &&
                                   (typeof r.value === 'string' || typeof r.value === 'number'));
@@ -921,21 +919,17 @@ const TOOL_GUIDES = {
       { name: 'Judul Chart',
         desc: 'Nama data yang dianalisis. Contoh: "Distribusi Berat Produk Minggu 1".' },
       { name: 'Method Bin',
-        desc: 'Cara menentukan lebar kelas. Sturges = otomatis cocok untuk data <200. Freedman-Diaconis = lebih akurat untuk data banyak. Manual = kamu tentukan sendiri.' },
-      { name: 'Jumlah Bin',
-        desc: 'Aktif jika Method = Manual. Jumlah kelas/kolom histogram. Rekomendasi: 5–20 bin.' },
-      { name: 'LSL (Lower Spec Limit)',
-        desc: 'Batas spesifikasi bawah dari pelanggan/standar. Contoh: berat minimum produk = 95 gram. Kosongkan jika tidak ada spesifikasi.' },
-      { name: 'USL (Upper Spec Limit)',
-        desc: 'Batas spesifikasi atas. Contoh: berat maksimum = 105 gram. LSL dan USL dibutuhkan untuk menghitung Cp dan Cpk.' },
+        desc: 'Cara otomatis menentukan jumlah kelas. Sturges = cocok untuk data <200. Freedman-Diaconis = lebih akurat untuk data banyak.' },
       { name: 'Unit',
-        desc: 'Satuan data. Contoh: "gram", "mm", "detik".' },
+        desc: 'Satuan data pada sumbu X. Contoh: "gram", "mm", "detik".' },
+      { name: 'Label Sumbu Y',
+        desc: 'Nama sumbu vertikal chart. Default "Frekuensi". Bisa diubah sesuai konteks data, contoh: "Jumlah Produk", "Banyak Kejadian".' },
       { name: 'Kurva Normal',
         desc: 'Centang untuk menampilkan kurva distribusi normal di atas histogram sebagai referensi.' },
       { name: 'Nilai',
         desc: 'Data pengukuran individual. Minimal 5 nilai. Contoh: berat setiap produk yang disampling.' }
     ],
-    tips: 'Isi LSL dan USL untuk mendapatkan nilai Cp dan Cpk. Cpk ≥ 1.33 = proses kapabel.'
+    tips: 'Bentuk distribusi mendekati lonceng = proses normal. Distribusi miring = ada faktor yang perlu diinvestigasi.'
   },
 
   fishbone: {

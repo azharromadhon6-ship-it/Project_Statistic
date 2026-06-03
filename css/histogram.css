@@ -149,15 +149,3 @@
   padding: 0 1rem 1rem;
 }
 
-.cap-badge {
-  display: inline-block;
-  padding: 0.35rem 0.7rem;
-  border-radius: var(--radius-sm);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.cap-badge.capable     { background: var(--accent-green); color: #fff !important; }
-.cap-badge.marginal    { background: var(--accent-amber); color: #fff !important; }
-.cap-badge.not-capable { background: var(--accent-red);   color: #fff !important; }

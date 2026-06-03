@@ -30,45 +30,30 @@
     return isNaN(v) ? NaN : v;
   }
 
-  function nnumOptional(s) {
-    if (s === null || s === undefined) return null;
-    const str = String(s).trim();
-    if (str === '') return null;
-    const v = nnum(str);
-    return isNaN(v) ? null : v;
-  }
-
   function histGetOptions() {
     const titleEl  = document.getElementById('hist-title');
     const methodEl = document.getElementById('hist-bin-method');
-    const countEl  = document.getElementById('hist-bin-count');
-    const lslEl    = document.getElementById('hist-lsl');
-    const uslEl    = document.getElementById('hist-usl');
     const unitEl   = document.getElementById('hist-unit');
     const curveEl  = document.getElementById('hist-normal-curve');
-    const method   = ['sturges','fd','manual'].includes(methodEl?.value) ? methodEl.value : 'sturges';
-    const binCount = parseInt(countEl?.value, 10);
+    const labelYEl = document.getElementById('hist-label-y');
+    const method   = ['sturges','fd'].includes(methodEl?.value) ? methodEl.value : 'sturges';
     return {
       title:     sanitizeText(titleEl?.value || '') || 'Histogram',
       binMethod: method,
-      binCount:  (!isNaN(binCount) && binCount >= 1 && binCount <= 50) ? binCount : 10,
-      lsl:       nnumOptional(lslEl?.value),
-      usl:       nnumOptional(uslEl?.value),
       showNormalCurve: !!curveEl?.checked,
-      unitLabel: sanitizeText(unitEl?.value || '') || 'Nilai'
+      unitLabel: sanitizeText(unitEl?.value || '') || 'Nilai',
+      labelY:    sanitizeText(labelYEl?.value || '').trim() || 'Frekuensi'
     };
   }
   window.getHistogramOptions = histGetOptions;
 
   function histSyncStateFromUI() {
     const o = histGetOptions();
-    AppState.histogram.title     = o.title === 'Histogram' ? '' : o.title;
-    AppState.histogram.binMethod = o.binMethod;
-    AppState.histogram.binCount  = o.binCount;
-    AppState.histogram.lsl       = o.lsl;
-    AppState.histogram.usl       = o.usl;
-    AppState.histogram.showNormal= o.showNormalCurve;
-    AppState.histogram.unit      = document.getElementById('hist-unit')?.value || '';
+    AppState.histogram.title      = o.title === 'Histogram' ? '' : o.title;
+    AppState.histogram.binMethod  = o.binMethod;
+    AppState.histogram.showNormal = o.showNormalCurve;
+    AppState.histogram.unit       = document.getElementById('hist-unit')?.value || '';
+    AppState.histogram.labelY     = (o.labelY === 'Frekuensi') ? '' : o.labelY;
   }
 
   /* ════════════════════════════════════════════════════════════
@@ -339,20 +324,15 @@
   function histSyncUI() {
     const titleEl  = document.getElementById('hist-title');
     const methodEl = document.getElementById('hist-bin-method');
-    const countEl  = document.getElementById('hist-bin-count');
-    const lslEl    = document.getElementById('hist-lsl');
-    const uslEl    = document.getElementById('hist-usl');
     const unitEl   = document.getElementById('hist-unit');
     const curveEl  = document.getElementById('hist-normal-curve');
+    const labelYEl = document.getElementById('hist-label-y');
     const h = AppState.histogram;
     if (titleEl)  titleEl.value  = h.title || '';
-    if (methodEl) methodEl.value = h.binMethod || 'sturges';
-    if (countEl)  countEl.value  = h.binCount || 10;
-    if (lslEl)    lslEl.value    = (h.lsl === null || h.lsl === undefined) ? '' : h.lsl;
-    if (uslEl)    uslEl.value    = (h.usl === null || h.usl === undefined) ? '' : h.usl;
+    if (methodEl) methodEl.value = ['sturges','fd'].includes(h.binMethod) ? h.binMethod : 'sturges';
     if (unitEl)   unitEl.value   = h.unit || '';
     if (curveEl)  curveEl.checked = !!h.showNormal;
-    if (countEl)  countEl.disabled = (methodEl?.value !== 'manual');
+    if (labelYEl) labelYEl.value = h.labelY || '';
     histEnsureDefaultType();
     histRenderTypes();
     histRebuildTableHeader();
@@ -367,21 +347,19 @@
     const el = document.getElementById('hist-stats');
     if (!el) return;
     el.innerHTML = '';
-    const cards = [
-      ['N total',  String(stats.n)],
-      ['Bar',      String(stats.k)],
-      ['Tipe',     String(stats.types)]
-    ];
+    const cards = [['N', String(stats.n)]];
     if (stats.allNumeric) {
-      if (stats.mean !== null)   cards.push(['Mean',    stats.mean.toFixed(3)]);
-      if (stats.stdDev !== null) cards.push(['Std Dev', stats.stdDev.toFixed(3)]);
-      if (stats.min !== null)    cards.push(['Min',     stats.min.toFixed(3)]);
-      if (stats.max !== null)    cards.push(['Max',     stats.max.toFixed(3)]);
-      if (stats.Cp !== null)     cards.push(['Cp',      stats.Cp.toFixed(3)]);
-      if (stats.Cpk !== null)    cards.push(['Cpk',     stats.Cpk.toFixed(3)]);
-      if (stats.inSpec !== null) cards.push(['Dalam Spec %', ((stats.inSpec / stats.n) * 100).toFixed(1) + '%']);
+      if (stats.mean !== null)   cards.push(['Mean',     stats.mean.toFixed(3)]);
+      if (stats.stdDev !== null) cards.push(['Std Dev',  stats.stdDev.toFixed(3)]);
+      if (stats.min !== null)    cards.push(['Min',      stats.min.toFixed(3)]);
+      if (stats.max !== null)    cards.push(['Max',      stats.max.toFixed(3)]);
+      if (stats.k !== undefined && stats.k !== null) cards.push(['Bins', String(stats.k)]);
+      if (stats.binWidth !== undefined && stats.binWidth !== null) {
+        cards.push(['Bin Width', stats.binWidth.toFixed(3)]);
+      }
     } else {
       cards.push(['Mode', 'Kategori (string)']);
+      if (stats.k !== undefined && stats.k !== null) cards.push(['Bar', String(stats.k)]);
     }
     cards.forEach(([label, val]) => {
       const card = document.createElement('div');
@@ -391,15 +369,6 @@
       card.append(l, v);
       el.appendChild(card);
     });
-    if (stats.Cpk !== null) {
-      const badge = document.createElement('div');
-      let cls = 'capable', text = 'KAPABEL';
-      if (stats.Cpk < 1.0)      { cls = 'not-capable'; text = 'TIDAK KAPABEL'; }
-      else if (stats.Cpk < 1.33){ cls = 'marginal';    text = 'MARGINAL'; }
-      badge.className = 'cap-badge ' + cls;
-      badge.textContent = text + ' (Cpk=' + stats.Cpk.toFixed(2) + ')';
-      el.appendChild(badge);
-    }
   }
 
   /* ════════════════════════════════════════════════════════════
@@ -451,14 +420,9 @@
       showEmptyState('histogram');
       return;
     }
-    if (options.lsl !== null && options.usl !== null && options.lsl >= options.usl) {
-      showToast('error', 'LSL harus lebih kecil dari USL');
-      return;
-    }
 
     // Frequency-weighted numeric stats (sum of all types per bar = total)
-    let mean = null, stdDev = null, minV = null, maxV = null;
-    let Cp = null, Cpk = null, inSpec = null;
+    let mean = null, stdDev = null, minV = null, maxV = null, binWidth = null;
     if (allNumeric) {
       const nums = bars.map(b => b.num);
       minV = Math.min(...nums);
@@ -467,14 +431,10 @@
       mean = sumWX / totalN;
       const sumSq = bars.reduce((s, b) => s + b.total * (b.num - mean) * (b.num - mean), 0);
       stdDev = Math.sqrt(sumSq / Math.max(1, totalN - 1));
-      if (options.lsl !== null && options.usl !== null && stdDev > 0) {
-        Cp = (options.usl - options.lsl) / (6 * stdDev);
-        Cpk = Math.min((mean - options.lsl) / (3 * stdDev),
-                       (options.usl - mean) / (3 * stdDev));
-        inSpec = bars
-          .filter(b => b.num >= options.lsl && b.num <= options.usl)
-          .reduce((s, b) => s + b.total, 0);
-      }
+      // Conceptual bin width: span / number of bins (matches the chosen method).
+      // Sturges / Freedman-Diaconis already drive bars.length; this just exposes
+      // the derived (max - min) / k for the stat panel.
+      if (bars.length > 0 && maxV > minV) binWidth = (maxV - minV) / bars.length;
     }
 
     // Destroy old chart + (re)register annotation
@@ -524,9 +484,9 @@
       });
     }
 
-    // Annotations — only when numeric (mapped to closest bar index)
+    // Annotations — only X̄ mean line (no LSL/USL anymore)
     const annotations = {};
-    if (annoOk && allNumeric) {
+    if (annoOk && allNumeric && mean !== null) {
       const closestIdx = (target) => {
         let bestI = 0, bestD = Infinity;
         for (let i = 0; i < bars.length; i++) {
@@ -535,32 +495,12 @@
         }
         return bestI;
       };
-      if (options.lsl !== null) {
-        annotations.LSL = {
-          type: 'line', scaleID: 'x', value: closestIdx(options.lsl),
-          borderColor: getCSSVar('--accent-red'), borderWidth: 2, borderDash: [6, 4],
-          label: { display: true, content: 'LSL=' + options.lsl, position: 'start',
-                   backgroundColor: getCSSVar('--accent-red'), color: '#fff',
-                   font: { size: 10, weight: 'bold' } }
-        };
-      }
-      if (options.usl !== null) {
-        annotations.USL = {
-          type: 'line', scaleID: 'x', value: closestIdx(options.usl),
-          borderColor: getCSSVar('--accent-red'), borderWidth: 2, borderDash: [6, 4],
-          label: { display: true, content: 'USL=' + options.usl, position: 'end',
-                   backgroundColor: getCSSVar('--accent-red'), color: '#fff',
-                   font: { size: 10, weight: 'bold' } }
-        };
-      }
-      if (mean !== null) {
-        annotations.Mean = {
-          type: 'line', scaleID: 'x', value: closestIdx(mean),
-          borderColor: getCSSVar('--accent-green'), borderWidth: 2,
-          label: { display: true, content: 'X̄=' + mean.toFixed(2), position: 'center',
-                   backgroundColor: getCSSVar('--accent-green'), color: '#fff', font: { size: 10 } }
-        };
-      }
+      annotations.Mean = {
+        type: 'line', scaleID: 'x', value: closestIdx(mean),
+        borderColor: getCSSVar('--accent-green'), borderWidth: 2,
+        label: { display: true, content: 'X̄=' + mean.toFixed(2), position: 'center',
+                 backgroundColor: getCSSVar('--accent-green'), color: '#fff', font: { size: 10 } }
+      };
     }
 
     const canvas = document.getElementById('hist-canvas');
@@ -589,7 +529,10 @@
             grid: { color: getCSSVar('--border-base') },
             ticks: { color: getCSSVar('--text-secondary'),
                      font: { family: getCSSVar('--font-mono'), size: 11 }, precision: 0 },
-            title: { display: true, text: 'Frekuensi', color: getCSSVar('--text-secondary') }
+            title: { display: true,
+                     text: options.labelY || 'Frekuensi',
+                     color: getCSSVar('--text-secondary'),
+                     font: { size: 12 } }
           }
         },
         plugins: {
@@ -616,8 +559,7 @@
 
     const stats = {
       n: totalN, k: bars.length, types: types.length, allNumeric,
-      mean, stdDev, min: minV, max: maxV,
-      Cp, Cpk, inSpec
+      mean, stdDev, min: minV, max: maxV, binWidth
     };
     lastResult = { bars, types: types.slice(), stats, options };
     histRenderStats(stats, options);
@@ -789,15 +731,13 @@
   function histReset() {
     showModal('Hapus semua data Histogram?', () => {
       if (window.histChartInstance) { window.histChartInstance.destroy(); window.histChartInstance = null; }
-      AppState.histogram.title = '';
-      AppState.histogram.binMethod = 'sturges';
-      AppState.histogram.binCount = 10;
-      AppState.histogram.lsl = null;
-      AppState.histogram.usl = null;
+      AppState.histogram.title      = '';
+      AppState.histogram.binMethod  = 'sturges';
       AppState.histogram.showNormal = false;
-      AppState.histogram.unit = '';
-      AppState.histogram.freqTypes = [];
-      AppState.histogram.rows = [];
+      AppState.histogram.unit       = '';
+      AppState.histogram.labelY     = '';
+      AppState.histogram.freqTypes  = [];
+      AppState.histogram.rows       = [];
       saveState();
       histSyncUI();
       showEmptyState('histogram');
@@ -825,12 +765,10 @@
 
     const methodSel = document.getElementById('hist-bin-method');
     methodSel?.addEventListener('change', () => {
-      const countEl = document.getElementById('hist-bin-count');
-      if (countEl) countEl.disabled = (methodSel.value !== 'manual');
       histSyncStateFromUI();
       saveState();
     });
-    ['hist-title','hist-bin-count','hist-lsl','hist-usl','hist-unit'].forEach(id => {
+    ['hist-title', 'hist-unit', 'hist-label-y'].forEach(id => {
       document.getElementById(id)?.addEventListener('blur', () => { histSyncStateFromUI(); saveState(); });
     });
     document.getElementById('hist-normal-curve')?.addEventListener('change', () => {
