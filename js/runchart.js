@@ -193,11 +193,22 @@
     const statusCls = isStable ? 'vital' : 'trivial';
 
     el.appendChild(mkCard('n (Data Poin)', String(stats.n)));
-    el.appendChild(mkCard('Median', stats.median.toFixed(4)));
+
+    // FIX 5 — Median card with spec'd DOM ids
+    const medianCard = mkCard('Median', stats.median.toFixed(3));
+    medianCard.id = 'run-stat-median';
+    medianCard.querySelector('.stat-value').id = 'run-stat-median-val';
+    el.appendChild(medianCard);
+
     el.appendChild(mkCard('Status', statusTxt, null, statusCls));
-    el.appendChild(mkCard('Run Aktual', String(stats.runCount),
+
+    // FIX 6 — Jumlah Run card with spec'd DOM ids
+    const runsCard = mkCard('Jumlah Run', String(stats.runCount),
       'Expected: ' + stats.expectedRuns.toFixed(1) +
-      (stats.sdRuns > 0 ? ' (±' + stats.sdRuns.toFixed(1) + ')' : '')));
+      (stats.sdRuns > 0 ? ' (±' + stats.sdRuns.toFixed(1) + ')' : ''));
+    runsCard.id = 'run-stat-runs';
+    runsCard.querySelector('.stat-value').id = 'run-stat-runs-val';
+    el.appendChild(runsCard);
     el.appendChild(mkCard('Run Terpanjang', String(stats.maxRunLen),
       stats.maxRunLen >= 8 ? '⚠ Melebihi batas (8)' : 'Dalam batas',
       stats.maxRunLen >= 8 ? 'trivial' : null));
@@ -416,47 +427,70 @@
     }
     const annoOk = (typeof annotationPlugin !== 'undefined');
 
-    // FASE 7 — point colors
+    // FASE 7 — point colors (FIX 6: blue above / purple below / green on median;
+    // astronomical points override to red)
     const astroSet = new Set(astronomicalPoints.map(p => p.index));
     const ptColors = classified.map(p => {
-      if (astroSet.has(p.index))  return getCSSVar('--accent-red');
-      if (p.side === 'above')     return getCSSVar('--chart-bar-vital');
-      if (p.side === 'below')     return getCSSVar('--text-muted');
-      return getCSSVar('--accent-amber');
+      if (astroSet.has(p.index)) return '#EF4444';
+      if (p.side === 'above')    return '#3B82F6';    // blue = above median
+      if (p.side === 'below')    return '#8B5CF6';    // purple = below median
+      return '#10B981';                                // green = on median
     });
-    const ptRadius = classified.map(p => astroSet.has(p.index) ? 9 : 5);
+    const ptRadius = classified.map(p => {
+      if (astroSet.has(p.index)) return 9;
+      if (p.side === 'on')       return 7;
+      return 5;
+    });
 
     // FASE 8 — datasets + annotations
-    const datasets = [{
-      type: 'line',
-      label: sanitizeText(options.yLabel || 'Nilai'),
-      data: classified.map(p => p.value),
-      borderColor: getCSSVar('--chart-bar-vital'),
-      borderWidth: 2,
-      pointBackgroundColor: ptColors,
-      pointBorderColor: ptColors,
-      pointRadius: ptRadius,
-      pointHoverRadius: 10,
-      tension: 0,
-      fill: false,
-      order: 1
-    }];
+    const labels = classified.map(p => p.label);
+    const datasets = [
+      // 1. Data line (order: 1 — drawn over the median guideline)
+      {
+        type: 'line',
+        label: sanitizeText(options.yLabel || 'Nilai'),
+        data: classified.map(p => p.value),
+        borderColor: '#3B82F6',
+        borderWidth: 2,
+        pointBackgroundColor: ptColors,
+        pointBorderColor: ptColors,
+        pointRadius: ptRadius,
+        pointHoverRadius: 10,
+        tension: 0,
+        fill: false,
+        order: 1
+      },
+      // 2. Median guideline (FIX 1+2 — ALWAYS on, no checkbox)
+      {
+        type: 'line',
+        label: 'Median = ' + median.toFixed(3),
+        data: Array(n).fill(median),
+        borderColor: '#F59E0B',
+        borderWidth: 2,
+        borderDash: [8, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        fill: false,
+        tension: 0,
+        order: 3
+      }
+    ];
 
     const annotations = {};
-    if (annoOk && options.showMedian) {
-      annotations.median = {
-        type: 'line', scaleID: 'y', value: median,
-        borderColor: getCSSVar('--accent-green'),
-        borderWidth: 2,
-        label: {
-          display: true,
-          content: 'Median = ' + median.toFixed(3),
-          position: 'start',
-          backgroundColor: getCSSVar('--accent-green'),
-          color: '#fff',
-          font: { size: 11, weight: 'bold' },
-          padding: { x: 6, y: 3 }
-        }
+    // FIX 3 — Right-edge median label (always shown)
+    if (annoOk && labels.length > 0) {
+      annotations.medianLabel = {
+        type: 'label',
+        xValue: labels[labels.length - 1],
+        yValue: median,
+        content: 'Median = ' + median.toFixed(3),
+        color: '#F59E0B',
+        backgroundColor: 'rgba(0,0,0,0)',
+        font: { size: 10, weight: 'bold' },
+        textAlign: 'left',
+        xAdjust: 8,
+        yAdjust: -10,
+        position: { x: 'end', y: 'center' }
       };
     }
     if (annoOk && options.showAnnotations) {
@@ -486,10 +520,17 @@
     const canvas = document.getElementById('rc-canvas');
     if (!canvas) return;
 
+    // FIX 4 — y-range pinned so the median guideline never gets clipped
+    // even if it sits at the extreme of the data range.
+    const yPool = [median, ...values];
+    const yPad  = (Math.max(...yPool) - Math.min(...yPool)) * 0.15;
+    const yMin  = parseFloat((Math.min(...yPool) - yPad).toFixed(3));
+    const yMax  = parseFloat((Math.max(...yPool) + yPad).toFixed(3));
+
     window.runChartInstance = new Chart(canvas.getContext('2d'), {
       type: 'line',
       data: {
-        labels: classified.map(p => p.label),
+        labels,
         datasets
       },
       options: {
@@ -497,6 +538,7 @@
         maintainAspectRatio: false,
         animation: { duration: 500, easing: 'easeOutQuart' },
         interaction: { mode: 'index', intersect: false },
+        layout: { padding: { top: 8, right: 90, bottom: 12, left: 8 } },
         scales: {
           x: {
             grid: { color: getCSSVar('--border-base') },
@@ -513,6 +555,8 @@
                      color: getCSSVar('--text-secondary'), font: { size: 12 } }
           },
           y: {
+            min: yMin,
+            max: yMax,
             grid: { color: getCSSVar('--border-base') },
             ticks: { color: getCSSVar('--text-secondary'),
                      font: { family: getCSSVar('--font-mono'), size: 11 } },
