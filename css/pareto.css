@@ -39,7 +39,39 @@
   .pareto-table-wrapper { max-height: 200px; }
 }
 
-.pareto-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); }
+/* MASALAH 1 — Pareto panel sizing on desktop. main.css already sets
+   the 380px width at ≥1024 px via .tool-grid grid-template-columns,
+   but Pareto's content (3-column input table) is the narrowest of
+   the seven panels — scope a defensive min/max here so the panel
+   never shrinks below 360 px on desktop regardless of grid-cell
+   negotiation. */
+@media (min-width: 1024px) {
+  #panel-pareto .tool-grid { grid-template-columns: 380px 1fr; }
+  #panel-pareto .input-panel {
+    min-width: 360px;
+    max-width: 400px;
+    flex-shrink: 0;
+  }
+}
+
+/* MASALAH 2 — Fixed column proportions for Kategori | Frekuensi | × so
+   Kategori has room for typical text, Frekuensi has room for 3-4 digit
+   numbers, and the × column stays compact. Without table-layout: fixed
+   the browser auto-sizes columns based on content and Kategori gets
+   squeezed when long words appear. */
+.pareto-input-table { width: 100%; border-collapse: collapse; font-size: var(--text-sm); table-layout: fixed; }
+.pareto-input-table th:nth-child(1),
+.pareto-input-table td:nth-child(1) { width: 50%; }
+.pareto-input-table th:nth-child(2),
+.pareto-input-table td:nth-child(2) { width: 38%; }
+.pareto-input-table th:nth-child(3),
+.pareto-input-table td:nth-child(3) {
+  width: 12%;
+  text-align: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+.pareto-input-table input { min-width: 0; box-sizing: border-box; }
 .pareto-input-table th {
   text-align: left;
   padding: 0.5rem 0.6rem;
