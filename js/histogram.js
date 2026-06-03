@@ -542,12 +542,15 @@
           }
         },
         plugins: {
+          // Title config copied verbatim from Control Chart (controlchart.js)
+          // per the "sama persis" spec. display + text source the only
+          // adaptation: histogram reads from #hist-title raw input.
           title: {
-            display: chartTitle !== '',
+            display: chartTitle.length > 0,
             text: chartTitle,
-            font: { size: 15, weight: 'bold' },
-            color: getCSSVar('--text-primary') || '#F1F5F9',
-            padding: { top: 10, bottom: 16 }
+            color: '#222222',
+            font: { family: 'system-ui, sans-serif', size: 15, weight: '700' },
+            padding: { top: 4, bottom: 12 }
           },
           legend: {
             position: 'top',
