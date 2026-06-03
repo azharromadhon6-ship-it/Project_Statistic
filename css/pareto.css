@@ -173,3 +173,43 @@
 #pareto-summary-table td.num { text-align: right; font-family: var(--font-mono); }
 #pareto-summary-table tr.vital-row { background: var(--brand-subtle); }
 #pareto-summary-table td.status.vital { color: var(--brand-light) !important; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   FIX PARETO PANEL SCROLL — DESKTOP (≥1024 px)
+   Last-resort defensive block kept at the very bottom of the file
+   so its specificity wins over any earlier rule.
+
+   Symptom: on some screens the data table was disappearing and the
+   panel couldn't scroll. Two causes traced:
+   1. .pareto-table-wrapper is a flex item with max-height: 340 px
+      but default flex-shrink: 1 — when the parent .input-panel's
+      max-height clamps total content, flex squeezes the wrapper
+      first (since it's the largest single child), down to 0,
+      hiding the table entirely.
+   2. The .input-panel `overflow-y: auto` from main.css can be
+      defeated by a cascade override picked up from later cousin
+      tools' rules; reasserting with !important locks it in.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width: 1024px) {
+  /* (1) Lock the panel scroll on, regardless of other cascade. */
+  #panel-pareto .input-panel {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    flex-shrink: 0;
+  }
+
+  /* (2) Keep the table wrapper from being flex-shrunk to nothing.
+     min-height shows ~3 rows even if other content is tall;
+     flex-shrink: 0 prevents the squeeze. */
+  #panel-pareto .pareto-table-wrapper {
+    flex-shrink: 0;
+    min-height: 120px;
+  }
+
+  /* (3) Make sure section labels and button groups also keep their
+     natural height — they are short but contribute to the scroll
+     content height that triggers the panel scrollbar. */
+  #panel-pareto .section-label,
+  #panel-pareto .btn-group,
+  #panel-pareto .action-buttons-group { flex-shrink: 0; }
+}
