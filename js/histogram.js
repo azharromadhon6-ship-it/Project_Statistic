@@ -512,7 +512,24 @@
     const canvas = document.getElementById('hist-canvas');
     if (!canvas) return;
 
+    // White canvas background — copied verbatim from controlchart.js
+    // (POLA A: local plugin object passed via plugins: [bgPlugin]).
+    // beforeDraw paints #FAFAFA into the canvas before Chart.js draws,
+    // so PNG export via toBase64Image() carries the light background too.
+    const COLOR_BG = '#FAFAFA';
+    const bgPlugin = {
+      id: 'lightBg',
+      beforeDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      }
+    };
+
     window.histChartInstance = new Chart(canvas.getContext('2d'), {
+      plugins: [bgPlugin],
       data: { labels: bars.map(b => b.label), datasets },
       options: {
         responsive: true,
