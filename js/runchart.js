@@ -532,7 +532,22 @@
     const yMin  = parseFloat((Math.min(...yPool) - yPad).toFixed(3));
     const yMax  = parseFloat((Math.max(...yPool) + yPad).toFixed(3));
 
+    // White canvas background — copied verbatim from histogram.js / pareto.js
+    // (POLA A: local plugin object passed via plugins: [bgPlugin]).
+    const COLOR_BG = '#FAFAFA';
+    const bgPlugin = {
+      id: 'lightBg',
+      beforeDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.fillStyle = COLOR_BG;
+        ctx.fillRect(0, 0, chart.width, chart.height);
+        ctx.restore();
+      }
+    };
+
     window.runChartInstance = new Chart(canvas.getContext('2d'), {
+      plugins: [bgPlugin],
       type: 'line',
       data: {
         labels,
@@ -574,7 +589,7 @@
             display: chartTitle !== '',
             text: chartTitle,
             font: { size: 15, weight: 'bold' },
-            color: getCSSVar('--text-primary') || '#F1F5F9',
+            color: '#000000',
             padding: { top: 10, bottom: 16 }
           },
           legend: {
