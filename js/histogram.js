@@ -348,18 +348,34 @@
     if (!el) return;
     el.innerHTML = '';
     const cards = [['N', String(stats.n)]];
+
+    // Frequency-based stats are mode-independent (work for categorical
+    // too) and always show with their unit label.
+    if (stats.mean !== null && stats.mean !== undefined) {
+      cards.push(['Mean', stats.mean.toFixed(2) + ' (frek/bin)']);
+    }
+    if (stats.min !== null && stats.min !== undefined) {
+      cards.push(['Min', String(stats.min) + ' (frek)']);
+    }
+    if (stats.max !== null && stats.max !== undefined) {
+      cards.push(['Max', String(stats.max) + ' (frek)']);
+    }
+
+    // Bins / Bar count
+    if (stats.k !== undefined && stats.k !== null) {
+      cards.push([stats.allNumeric ? 'Bins' : 'Bar', String(stats.k)]);
+    }
+
+    // Numeric-only extras describing the X-axis input distribution
     if (stats.allNumeric) {
-      if (stats.mean !== null)   cards.push(['Mean',     stats.mean.toFixed(3)]);
-      if (stats.stdDev !== null) cards.push(['Std Dev',  stats.stdDev.toFixed(3)]);
-      if (stats.min !== null)    cards.push(['Min',      stats.min.toFixed(3)]);
-      if (stats.max !== null)    cards.push(['Max',      stats.max.toFixed(3)]);
-      if (stats.k !== undefined && stats.k !== null) cards.push(['Bins', String(stats.k)]);
+      if (stats.stdDev !== null && stats.stdDev !== undefined) {
+        cards.push(['Std Dev', stats.stdDev.toFixed(3)]);
+      }
       if (stats.binWidth !== undefined && stats.binWidth !== null) {
         cards.push(['Bin Width', stats.binWidth.toFixed(3)]);
       }
     } else {
       cards.push(['Mode', 'Kategori (string)']);
-      if (stats.k !== undefined && stats.k !== null) cards.push(['Bar', String(stats.k)]);
     }
     cards.forEach(([label, val]) => {
       const card = document.createElement('div');
@@ -427,20 +443,37 @@
       return;
     }
 
-    // Frequency-weighted numeric stats (sum of all types per bar = total)
-    let mean = null, stdDev = null, minV = null, maxV = null, binWidth = null;
+    // ──────────────────────────────────────────────────────────────────
+    // Frequency-based stats (Y-axis / bar heights). Mode-independent —
+    // works for both numeric and categorical bins.
+    //   Mean = totalFrekuensi / jumlahBin
+    //   Min  = lowest bar height
+    //   Max  = highest bar height
+    // The bar.total field is each bar's chart-Y value (sum of all
+    // freq-types per row).
+    // ──────────────────────────────────────────────────────────────────
+    const counts        = bars.map(b => b.total);
+    const jumlahBin     = counts.length;
+    const totalFrekuensi = counts.reduce((s, v) => s + v, 0);
+    const meanFrek = jumlahBin > 0 ? totalFrekuensi / jumlahBin : 0;
+    const minFrek  = jumlahBin > 0 ? Math.min(...counts) : 0;
+    const maxFrek  = jumlahBin > 0 ? Math.max(...counts) : 0;
+
+    // Numeric-axis stats (Std Dev + Bin Width) — kept as-is per constraint,
+    // they describe the raw input values (X-axis), not the bar heights.
+    let stdDev = null, binWidth = null;
     if (allNumeric) {
       const nums = bars.map(b => b.num);
-      minV = Math.min(...nums);
-      maxV = Math.max(...nums);
+      const numericMin = Math.min(...nums);
+      const numericMax = Math.max(...nums);
       const sumWX = bars.reduce((s, b) => s + b.num * b.total, 0);
-      mean = sumWX / totalN;
-      const sumSq = bars.reduce((s, b) => s + b.total * (b.num - mean) * (b.num - mean), 0);
+      const numericMean = sumWX / totalN;
+      const sumSq = bars.reduce((s, b) =>
+        s + b.total * (b.num - numericMean) * (b.num - numericMean), 0);
       stdDev = Math.sqrt(sumSq / Math.max(1, totalN - 1));
-      // Conceptual bin width: span / number of bins (matches the chosen method).
-      // Sturges / Freedman-Diaconis already drive bars.length; this just exposes
-      // the derived (max - min) / k for the stat panel.
-      if (bars.length > 0 && maxV > minV) binWidth = (maxV - minV) / bars.length;
+      if (jumlahBin > 0 && numericMax > numericMin) {
+        binWidth = (numericMax - numericMin) / jumlahBin;
+      }
     }
 
     // Destroy old chart + (re)register annotation
@@ -591,8 +624,11 @@
     });
 
     const stats = {
-      n: totalN, k: bars.length, types: types.length, allNumeric,
-      mean, stdDev, min: minV, max: maxV, binWidth
+      n: totalN, k: jumlahBin, types: types.length, allNumeric,
+      // Mean / Min / Max now describe frequencies per bin (Y-axis),
+      // matching the corrected spec — not raw input values (X-axis).
+      mean: meanFrek, min: minFrek, max: maxFrek,
+      stdDev, binWidth
     };
     lastResult = { bars, types: types.slice(), stats, options };
     histRenderStats(stats, options);
