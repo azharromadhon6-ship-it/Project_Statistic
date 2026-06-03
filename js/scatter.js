@@ -13,28 +13,30 @@
   }
 
   function scGetOptions() {
-    if (typeof window.getScatterOptions === 'function') return window.getScatterOptions();
     const titleEl  = document.getElementById('sc-title');
     const xLblEl   = document.getElementById('sc-xlabel');
     const yLblEl   = document.getElementById('sc-ylabel');
     const regEl    = document.getElementById('sc-show-regression');
     const bandEl   = document.getElementById('sc-show-band');
+    const regXYEl  = document.getElementById('scatter-reg-xy');
     return {
-      title:          sanitizeText(titleEl?.value || '') || 'Scatter Diagram',
-      xLabel:         sanitizeText(xLblEl?.value || '') || 'X',
-      yLabel:         sanitizeText(yLblEl?.value || '') || 'Y',
-      showRegression: regEl ? !!regEl.checked : true,
-      showBand:       bandEl ? !!bandEl.checked : false
+      title:                sanitizeText(titleEl?.value || '') || 'Scatter Diagram',
+      xLabel:               sanitizeText(xLblEl?.value || '') || 'X',
+      yLabel:               sanitizeText(yLblEl?.value || '') || 'Y',
+      showRegression:       regEl   ? !!regEl.checked   : true,
+      showBand:             bandEl  ? !!bandEl.checked  : false,
+      showInverseRegression: regXYEl ? !!regXYEl.checked : false
     };
   }
 
   function scSyncStateFromUI() {
     const o = scGetOptions();
-    AppState.scatter.title          = o.title === 'Scatter Diagram' ? '' : o.title;
-    AppState.scatter.xLabel         = o.xLabel;
-    AppState.scatter.yLabel         = o.yLabel;
-    AppState.scatter.showRegression = o.showRegression;
-    AppState.scatter.showBand       = o.showBand;
+    AppState.scatter.title                 = o.title === 'Scatter Diagram' ? '' : o.title;
+    AppState.scatter.xLabel                = o.xLabel;
+    AppState.scatter.yLabel                = o.yLabel;
+    AppState.scatter.showRegression        = o.showRegression;
+    AppState.scatter.showBand              = o.showBand;
+    AppState.scatter.showInverseRegression = o.showInverseRegression;
   }
 
   /* ---------- input table ---------- */
@@ -170,11 +172,13 @@
     const yLblEl  = document.getElementById('sc-ylabel');
     const regEl   = document.getElementById('sc-show-regression');
     const bandEl  = document.getElementById('sc-show-band');
+    const regXYEl = document.getElementById('scatter-reg-xy');
     if (titleEl) titleEl.value = s.title || '';
     if (xLblEl)  xLblEl.value  = (s.xLabel && s.xLabel !== 'X') ? s.xLabel : '';
     if (yLblEl)  yLblEl.value  = (s.yLabel && s.yLabel !== 'Y') ? s.yLabel : '';
     if (regEl)   regEl.checked = !!s.showRegression;
     if (bandEl)  bandEl.checked = !!s.showBand;
+    if (regXYEl) regXYEl.checked = !!s.showInverseRegression;
     scPopulateTable(s.rows.slice());
   }
   window.scSyncUI = scSyncUI;
@@ -215,8 +219,29 @@
     };
     const rCls = Math.abs(stats.r) >= 0.7 ? 'vital' : (Math.abs(stats.r) >= 0.5 ? '' : 'trivial');
     el.appendChild(mkCard('n (Pasang Data)', String(stats.n)));
-    el.appendChild(mkCard('Pearson r', stats.r.toFixed(4), interpretR(stats.r), rCls));
-    el.appendChild(mkCard('Koefisien r²', stats.r2.toFixed(4), 'Variasi Y yang dijelaskan X'));
+
+    // Pearson r — gets the spec'd DOM id so external code can target it.
+    const rCard = mkCard('Pearson r', stats.r.toFixed(3), interpretR(stats.r), rCls);
+    rCard.id = 'scatter-stat-r';
+    el.appendChild(rCard);
+
+    // R² — shown as percentage (Variasi Y yang dijelaskan X).
+    const r2Pct = (stats.r2 * 100).toFixed(1) + '%';
+    const r2Card = mkCard('R² (Determinasi)', r2Pct, stats.r2.toFixed(4) + ' — variasi Y yang dijelaskan X');
+    r2Card.id = 'scatter-stat-r2';
+    el.appendChild(r2Card);
+
+    // Interpretasi — colored value text per spec thresholds.
+    const absR = Math.abs(stats.r);
+    let interpText, interpColor;
+    if (absR >= 0.8)      { interpText = 'Korelasi Kuat';   interpColor = '#10B981'; }
+    else if (absR >= 0.5) { interpText = 'Korelasi Sedang'; interpColor = '#F59E0B'; }
+    else                  { interpText = 'Korelasi Lemah';  interpColor = '#EF4444'; }
+    const interpCard = mkCard('Interpretasi', interpText, '|r| = ' + absR.toFixed(3));
+    interpCard.id = 'scatter-stat-interp';
+    interpCard.querySelector('.stat-value').style.color = interpColor;
+    el.appendChild(interpCard);
+
     const sign = stats.beta1 >= 0 ? '+' : '';
     el.appendChild(mkCard('Persamaan Regresi',
       'Ŷ = ' + stats.beta0.toFixed(3) + sign + stats.beta1.toFixed(3) + 'X',
@@ -429,7 +454,48 @@
       }
     }
 
-    // FASE 6.5 — annotations: X̄ and Ȳ guidelines
+    // ──────────────────────────────────────────────────────────────────
+    // FITUR 1 — Regresi X pada Y (inverse). X = a_xy + b_xy * Y so in
+    // chart (x → y) coordinates: y = (x - a_xy) / b_xy. Guard against
+    // b_xy ≈ 0 (vertical line) so we don't divide by zero.
+    // ──────────────────────────────────────────────────────────────────
+    const b_xy = Syy > 0 ? Sxy / Syy : 0;
+    const a_xy = Xbar - b_xy * Ybar;
+    if (options.showInverseRegression && Math.abs(b_xy) > 1e-9) {
+      const lineXonY = [
+        { x: xMin, y: (xMin - a_xy) / b_xy },
+        { x: xMax, y: (xMax - a_xy) / b_xy }
+      ];
+      const signXY = (1 / b_xy) >= 0 ? '+' : '';
+      datasets.push({
+        type: 'line',
+        label: 'Regresi X pada Y: Ŷ=' + (-a_xy / b_xy).toFixed(3) + signXY + (1 / b_xy).toFixed(3) + 'X',
+        data: lineXonY,
+        borderColor: '#F59E0B',
+        borderWidth: 2,
+        borderDash: [5, 4],
+        pointRadius: 0,
+        fill: false,
+        tension: 0,
+        order: 1
+      });
+    }
+
+    // FITUR 2 — Titik rata-rata (x̄, ȳ) — always shown.
+    datasets.push({
+      type: 'scatter',
+      label: 'Mean (x̄=' + Xbar.toFixed(2) + ', ȳ=' + Ybar.toFixed(2) + ')',
+      data: [{ x: Xbar, y: Ybar }],
+      backgroundColor: '#EF4444',
+      borderColor: '#ffffff',
+      borderWidth: 2,
+      pointRadius: 10,
+      pointHoverRadius: 13,
+      pointStyle: 'crossRot',
+      order: 0
+    });
+
+    // FASE 6.5 — annotations: X̄ and Ȳ guidelines + mean label
     const annotations = {};
     if (annoOk) {
       annotations.xMean = {
@@ -443,6 +509,19 @@
         borderColor: getCSSVar('--text-muted'), borderWidth: 1, borderDash: [4, 4],
         label: { display: true, content: 'Ȳ=' + Ybar.toFixed(2), position: 'end',
                  backgroundColor: 'transparent', color: getCSSVar('--text-muted'), font: { size: 9 } }
+      };
+      // FITUR 2 — label near the (x̄, ȳ) marker
+      annotations.meanLabel = {
+        type: 'label',
+        xValue: Xbar,
+        yValue: Ybar,
+        content: ['x̄ = ' + Xbar.toFixed(2), 'ȳ = ' + Ybar.toFixed(2)],
+        color: '#EF4444',
+        backgroundColor: 'rgba(0,0,0,0)',
+        font: { size: 10, weight: 'bold' },
+        position: { x: 'end', y: 'start' },
+        xAdjust: 12,
+        yAdjust: -10
       };
     }
 
@@ -683,7 +762,7 @@
     ['sc-title', 'sc-xlabel', 'sc-ylabel'].forEach(id => {
       document.getElementById(id)?.addEventListener('blur', () => { scSyncStateFromUI(); saveState(); });
     });
-    ['sc-show-regression', 'sc-show-band'].forEach(id => {
+    ['sc-show-regression', 'sc-show-band', 'scatter-reg-xy'].forEach(id => {
       document.getElementById(id)?.addEventListener('change', () => { scSyncStateFromUI(); saveState(); });
     });
 

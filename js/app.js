@@ -49,6 +49,7 @@ const AppState = {
   scatter: {
     title: '', xLabel: 'X', yLabel: 'Y',
     showRegression: true, showBand: false,
+    showInverseRegression: false,
     rows: []                 // { id, label, x, y }
   },
   runChart: {
@@ -488,8 +489,9 @@ function restoreState() {
       if (!Array.isArray(sc.rows)) sc.rows = [];
       if (typeof sc.xLabel !== 'string') sc.xLabel = 'X';
       if (typeof sc.yLabel !== 'string') sc.yLabel = 'Y';
-      if (typeof sc.showRegression !== 'boolean') sc.showRegression = true;
-      if (typeof sc.showBand !== 'boolean')       sc.showBand       = false;
+      if (typeof sc.showRegression !== 'boolean')        sc.showRegression        = true;
+      if (typeof sc.showBand !== 'boolean')              sc.showBand              = false;
+      if (typeof sc.showInverseRegression !== 'boolean') sc.showInverseRegression = false;
       sc.rows = sc.rows.filter(r => r && typeof r.id === 'string' &&
                                     typeof r.x === 'number' && typeof r.y === 'number');
       sc.rows.forEach(r => { if (typeof r.label !== 'string') r.label = ''; });
@@ -548,12 +550,14 @@ function getScatterOptions() {
   const yLblEl  = document.getElementById('sc-ylabel');
   const regEl   = document.getElementById('sc-show-regression');
   const bandEl  = document.getElementById('sc-show-band');
+  const regXYEl = document.getElementById('scatter-reg-xy');
   return {
-    title:          sanitizeText(titleEl?.value || '') || 'Scatter Diagram',
-    xLabel:         sanitizeText(xLblEl?.value || '')  || 'X',
-    yLabel:         sanitizeText(yLblEl?.value || '')  || 'Y',
-    showRegression: regEl  ? !!regEl.checked  : true,
-    showBand:       bandEl ? !!bandEl.checked : false
+    title:                sanitizeText(titleEl?.value || '') || 'Scatter Diagram',
+    xLabel:               sanitizeText(xLblEl?.value || '')  || 'X',
+    yLabel:               sanitizeText(yLblEl?.value || '')  || 'Y',
+    showRegression:       regEl   ? !!regEl.checked   : true,
+    showBand:             bandEl  ? !!bandEl.checked  : false,
+    showInverseRegression: regXYEl ? !!regXYEl.checked : false
   };
 }
 window.getScatterOptions = getScatterOptions;
@@ -957,9 +961,17 @@ const TOOL_GUIDES = {
       { name: 'Label Y',
         desc: 'Nama variabel dependen (sumbu vertikal). Contoh: "Kekuatan Tarik (N)", "Cacat per Batch".' },
       { name: 'Garis Regresi',
-        desc: 'Centang untuk menampilkan garis tren linear. Berguna untuk melihat arah korelasi.' },
+        desc: 'Centang untuk menampilkan garis tren linear (Y pada X). Berguna untuk melihat arah korelasi.' },
       { name: 'Conf. Band 95%',
         desc: 'Centang untuk menampilkan area kepercayaan 95% di sekitar garis regresi.' },
+      { name: 'Regresi X pada Y',
+        desc: 'Garis regresi terbalik — X diprediksi dari Y. Berguna untuk melihat seberapa berbeda kedua arah regresi. Jika kedua garis hampir sama, korelasi sangat kuat.' },
+      { name: 'Titik Mean (x̄, ȳ)',
+        desc: 'Titik pertemuan rata-rata X dan rata-rata Y. Kedua garis regresi selalu melewati titik ini. Selalu ditampilkan.' },
+      { name: 'r (Pearson)',
+        desc: 'Koefisien korelasi. Nilai antara -1 dan +1. Mendekati ±1 = korelasi kuat. Mendekati 0 = lemah.' },
+      { name: 'R²',
+        desc: 'Seberapa besar variasi Y yang bisa dijelaskan oleh X. R² = 0.81 berarti 81% variasi Y dijelaskan oleh X.' },
       { name: 'X & Y (data)',
         desc: 'Pasangan nilai pengukuran. X = variabel sebab, Y = variabel akibat. Minimal 5 pasang.' }
     ],
