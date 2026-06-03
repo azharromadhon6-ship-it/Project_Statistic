@@ -16,7 +16,14 @@
 #panel-pareto .field-row > .field-group:first-child { flex: 0 0 96px; min-width: 0; }
 #panel-pareto .field-row > .field-group:last-child  { flex: 1 1 0; min-width: 0; }
 #panel-pareto .field-row > .field-group > input { width: 100%; min-width: 0; }
-#panel-pareto .input-panel { overflow: visible; }
+/* `overflow: visible` here used to defensively complement the field-row
+   min-width:0 fix, but it overrode main.css's panel-wide
+   `overflow-y: auto` at desktop — so the panel could no longer scroll
+   internally, content piled up, and the bottom buttons (Export PNG /
+   Export CSV / Reset) were clipped on smaller laptop screens. Removed
+   so Pareto's input panel scrolls like Flowchart's (which has no such
+   override). The field-row `min-width: 0` rules above already prevent
+   horizontal overflow without needing this. */
 @media (max-width: 480px) {
   #panel-pareto .field-row { flex-direction: column; }
   #panel-pareto .field-row > .field-group { flex: unset; width: 100%; }
