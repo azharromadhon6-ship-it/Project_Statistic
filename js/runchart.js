@@ -271,6 +271,11 @@
       return;
     }
 
+    // Read raw title input — empty input → no title bar (display: false)
+    const titleEl = document.getElementById('rc-title');
+    const chartTitle = sanitizeText((titleEl?.value || '').trim());
+
+
     // FASE 1 — sanitize & validate
     const points = [];
     const errors = [];
@@ -565,6 +570,13 @@
           }
         },
         plugins: {
+          title: {
+            display: chartTitle !== '',
+            text: chartTitle,
+            font: { size: 15, weight: 'bold' },
+            color: getCSSVar('--text-primary') || '#F1F5F9',
+            padding: { top: 10, bottom: 16 }
+          },
           legend: {
             labels: { color: getCSSVar('--text-secondary'),
                       font: { family: getCSSVar('--font-body'), size: 12 } }

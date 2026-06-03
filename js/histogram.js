@@ -383,6 +383,12 @@
     histEnsureDefaultType();
     const types = AppState.histogram.freqTypes;
 
+    // Read raw title input at render time so an empty field hides the
+    // title bar entirely (display: false), instead of the histGetOptions
+    // fallback ('Histogram') always showing.
+    const titleEl = document.getElementById('hist-title');
+    const chartTitle = sanitizeText((titleEl?.value || '').trim());
+
     if (!Array.isArray(rawData) || rawData.length === 0) {
       showToast('error', 'Minimal 2 baris diperlukan');
       showEmptyState('histogram');
@@ -536,6 +542,13 @@
           }
         },
         plugins: {
+          title: {
+            display: chartTitle !== '',
+            text: chartTitle,
+            font: { size: 15, weight: 'bold' },
+            color: getCSSVar('--text-primary') || '#F1F5F9',
+            padding: { top: 10, bottom: 16 }
+          },
           legend: {
             position: 'top',
             labels: { color: getCSSVar('--text-secondary'), usePointStyle: true, boxWidth: 14 }
