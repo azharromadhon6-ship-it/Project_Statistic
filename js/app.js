@@ -33,7 +33,7 @@ const AppState = {
   controlChart: {
     // p-Chart (Peta Kendali Proporsi): each row = one period with
     // its production count (n) and defect count (np).
-    title: '', unit: '', labelY: '',
+    title: '', unit: '', labelY: '', labelX: '',
     rows: [],                // { id, period, n, np }
     stats: {}                // cache of last-computed stats
   },
@@ -312,6 +312,7 @@ function clearState() {
   AppState.controlChart.title  = '';
   AppState.controlChart.unit   = '';
   AppState.controlChart.labelY = '';
+  AppState.controlChart.labelX = '';
   AppState.controlChart.rows   = [];
   AppState.controlChart.stats  = {};
   AppState.histogram.title      = '';
@@ -415,6 +416,7 @@ function restoreState() {
       const cc = p.controlChart;
       if (!Array.isArray(cc.rows)) cc.rows = [];
       if (typeof cc.labelY !== 'string') cc.labelY = '';
+      if (typeof cc.labelX !== 'string') cc.labelX = '';
       // p-Chart schema: { id, period, n, np }. Strip legacy fields from
       // any older saved sessions so they don't leak into AppState.
       delete cc.type; delete cc.sigma; delete cc.subgroupSize;
@@ -911,6 +913,8 @@ const TOOL_GUIDES = {
         desc: 'Nama proses yang dimonitor. Contoh: "Proporsi Cacat Produksi Baju 2024".' },
       { name: 'Label Sumbu Y',
         desc: 'Nama sumbu vertikal chart. Default: "Proporsi Cacat (p)". Bisa diubah sesuai konteks.' },
+      { name: 'Label Sumbu X',
+        desc: 'Nama sumbu horizontal. Default "Periode". Contoh: "Bulan", "Minggu ke-", "Tanggal Produksi".' },
       { name: 'Periode / Label',
         desc: 'Nama periode waktu pengamatan. Contoh: "Jan", "Minggu 1", "Shift Pagi".' },
       { name: 'Produksi (n)',

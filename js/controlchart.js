@@ -18,17 +18,20 @@
   function ccGetOptions() {
     const titleEl  = document.getElementById('cc-title');
     const labelYEl = document.getElementById('cc-label-y');
+    const labelXEl = document.getElementById('cc-label-x');
     return {
       title:  sanitizeText(titleEl?.value || '') || 'p-Chart',
-      labelY: sanitizeText(labelYEl?.value || '').trim() || 'Proporsi Cacat (p)'
+      labelY: sanitizeText(labelYEl?.value || '').trim() || 'Proporsi Cacat (p)',
+      labelX: sanitizeText(labelXEl?.value || '').trim() || 'Periode'
     };
   }
   window.getControlChartOptions = ccGetOptions;
 
   function ccSyncStateFromUI() {
     const o = ccGetOptions();
-    AppState.controlChart.title  = (o.title === 'p-Chart') ? '' : o.title;
-    AppState.controlChart.labelY = (o.labelY === 'Proporsi Cacat (p)') ? '' : o.labelY;
+    AppState.controlChart.title  = (o.title  === 'p-Chart')              ? '' : o.title;
+    AppState.controlChart.labelY = (o.labelY === 'Proporsi Cacat (p)')   ? '' : o.labelY;
+    AppState.controlChart.labelX = (o.labelX === 'Periode')              ? '' : o.labelX;
   }
 
   /* ────────────────────────────────────────────────────────────
@@ -184,9 +187,11 @@
   function ccSyncUI() {
     const titleEl  = document.getElementById('cc-title');
     const labelYEl = document.getElementById('cc-label-y');
+    const labelXEl = document.getElementById('cc-label-x');
     const c = AppState.controlChart;
     if (titleEl)  titleEl.value  = c.title  || '';
     if (labelYEl) labelYEl.value = c.labelY || '';
+    if (labelXEl) labelXEl.value = c.labelX || '';
     ccPopulateTable(c.rows.slice());
   }
   window.ccSyncUI = ccSyncUI;
@@ -421,6 +426,57 @@
     const canvas = document.getElementById('cc-chart-canvas');
     if (!canvas) return;
 
+    // Right-edge annotation labels for UCL / CL / LCL — read at the last
+    // data point so they sit at the right of the chart.
+    if (typeof annotationPlugin !== 'undefined' && !Chart.registry.plugins.get('annotation')) {
+      Chart.register(annotationPlugin);
+    }
+    const annoOk = (typeof annotationPlugin !== 'undefined');
+    const lastIdx = stats.labels.length - 1;
+    const annotations = annoOk ? {
+      uclLabel: {
+        type: 'label',
+        xValue: stats.labels[lastIdx],
+        yValue: stats.UCLs[lastIdx],
+        content: 'UCL = ' + stats.UCL_avg.toFixed(4),
+        xAdjust: 12,
+        backgroundColor: 'rgba(0,0,0,0)',
+        color: COLOR_OOC,
+        font: { size: 11, weight: 'bold', family: 'monospace' },
+        textAlign: 'left',
+        position: { x: 'start', y: 'center' }
+      },
+      clLabel: {
+        type: 'label',
+        xValue: stats.labels[lastIdx],
+        yValue: stats.pBar,
+        content: 'p̄ = ' + stats.pBar.toFixed(4),
+        xAdjust: 12,
+        backgroundColor: 'rgba(0,0,0,0)',
+        color: COLOR_CL,
+        font: { size: 11, weight: 'bold', family: 'monospace' },
+        textAlign: 'left',
+        position: { x: 'start', y: 'center' }
+      },
+      lclLabel: {
+        type: 'label',
+        xValue: stats.labels[lastIdx],
+        yValue: stats.LCLs[lastIdx],
+        content: 'LCL = ' + stats.LCL_avg.toFixed(4),
+        xAdjust: 12,
+        backgroundColor: 'rgba(0,0,0,0)',
+        color: COLOR_OOC,
+        font: { size: 11, weight: 'bold', family: 'monospace' },
+        textAlign: 'left',
+        position: { x: 'start', y: 'center' }
+      }
+    } : {};
+
+    // Auto-rotate x-axis ticks when period labels are long.
+    const avgLabelLen = stats.labels.reduce((s, l) => s + String(l).length, 0)
+                       / Math.max(1, stats.labels.length);
+    const xRotation = avgLabelLen > 6 ? 45 : 0;
+
     window.ccChartInstance = new Chart(canvas.getContext('2d'), {
       plugins: [bgPlugin],
       data: { labels: stats.labels, datasets },
@@ -429,7 +485,9 @@
         maintainAspectRatio: false,
         interaction: { mode: 'index', intersect: false },
         animation: { duration: 400 },
-        layout: { padding: { top: 8, right: 12, bottom: 4, left: 8 } },
+        // Right-padded so UCL/CL/LCL labels at the data's last x don't
+        // get clipped; bottom-padded so rotated tick labels stay visible.
+        layout: { padding: { top: 8, right: 90, bottom: 20, left: 10 } },
         plugins: {
           title: {
             display: !!options.title,
@@ -478,15 +536,27 @@
                 ];
               }
             }
-          }
+          },
+          annotation: annoOk ? { clip: false, annotations } : {}
         },
         scales: {
           x: {
             grid:   { color: 'rgba(148,163,184,0.10)' },
             border: { color: '#dddddd' },
-            ticks:  { color: '#555555', font: { size: 11, family: 'system-ui, sans-serif' } },
-            title:  { display: true, text: 'Periode',
-                      color: '#555555', font: { size: 12, family: 'system-ui, sans-serif' } }
+            ticks:  {
+              color: '#555555',
+              font: { size: 11, family: 'system-ui, sans-serif' },
+              maxRotation: xRotation,
+              minRotation: xRotation,
+              autoSkip: true,
+              autoSkipPadding: 12,
+              padding: 6
+            },
+            title:  { display: true,
+                      text: options.labelX || 'Periode',
+                      color: '#555555',
+                      font: { size: 12, weight: '500', family: 'system-ui, sans-serif' },
+                      padding: { top: 10 } }
           },
           y: {
             min: parseFloat(yMin.toFixed(4)),
@@ -640,6 +710,7 @@
       window.ccMRChartInstance = null;
       AppState.controlChart.title  = '';
       AppState.controlChart.labelY = '';
+      AppState.controlChart.labelX = '';
       AppState.controlChart.rows   = [];
       AppState.controlChart.stats  = {};
       saveState();
@@ -669,7 +740,7 @@
     document.getElementById('btn-cc-export-csv')?.addEventListener('click', ccExportCSV);
     document.getElementById('btn-cc-reset')?.addEventListener('click', ccReset);
 
-    ['cc-title', 'cc-label-y'].forEach(id => {
+    ['cc-title', 'cc-label-y', 'cc-label-x'].forEach(id => {
       document.getElementById(id)?.addEventListener('blur', () => {
         ccSyncStateFromUI();
         saveState();
